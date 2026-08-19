@@ -18,6 +18,7 @@ public sealed class RobotJobManager : IDisposable
     public const int HardPackageLimitBytes = 225_280;
     private const int MaxFiles = 128;
     private const long MaxReturnedArtifactBytes = 20L * 1024 * 1024;
+    private static readonly TimeSpan RuntimeProofMaximumAge = TimeSpan.FromMinutes(5);
 
     private static readonly HashSet<string> AllowedExtensions = new(StringComparer.OrdinalIgnoreCase)
     {
@@ -39,9 +40,13 @@ public sealed class RobotJobManager : IDisposable
     private readonly ConcurrentDictionary<string, RobotJob> _jobs = new(StringComparer.Ordinal);
     private readonly string _rootDirectory;
     private readonly string _robotExecutable;
+    private readonly Func<WindowsRuntimeStatus?>? _runtimeStatusProvider;
     private readonly JsonSerializerOptions _jsonOptions = new() { PropertyNameCaseInsensitive = true };
 
-    public RobotJobManager(string? rootDirectory = null, string? robotExecutable = null)
+    public RobotJobManager(
+        string? rootDirectory = null,
+        string? robotExecutable = null,
+        Func<WindowsRuntimeStatus?>? runtimeStatusProvider = null)
     {
         _rootDirectory = rootDirectory ?? Path.Combine(
             Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
@@ -50,6 +55,7 @@ public sealed class RobotJobManager : IDisposable
         _robotExecutable = robotExecutable
             ?? Environment.GetEnvironmentVariable("CYFAST_ROBOT_EXECUTABLE")
             ?? (OperatingSystem.IsWindows() ? "robot.exe" : "robot");
+        _runtimeStatusProvider = runtimeStatusProvider;
         Directory.CreateDirectory(_rootDirectory);
     }
 
@@ -86,15 +92,8 @@ public sealed class RobotJobManager : IDisposable
         foreach (var file in request.Files ?? Array.Empty<RobotPackageFile>())
         {
             string path;
-            try
-            {
-                path = NormalizeRelativePath(file.Path);
-            }
-            catch (InvalidDataException exception)
-            {
-                errors.Add(exception.Message);
-                continue;
-            }
+            try { path = NormalizeRelativePath(file.Path); }
+            catch (InvalidDataException exception) { errors.Add(exception.Message); continue; }
 
             if (!AllowedExtensions.Contains(Path.GetExtension(path)))
             {
@@ -108,15 +107,8 @@ public sealed class RobotJobManager : IDisposable
             }
 
             byte[] bytes;
-            try
-            {
-                bytes = Convert.FromBase64String(file.ContentBase64 ?? string.Empty);
-            }
-            catch (FormatException)
-            {
-                errors.Add($"File is not valid base64: {path}");
-                continue;
-            }
+            try { bytes = Convert.FromBase64String(file.ContentBase64 ?? string.Empty); }
+            catch (FormatException) { errors.Add($"File is not valid base64: {path}"); continue; }
 
             totalBytes += bytes.Length;
             if (totalBytes > configuredLimit)
@@ -131,8 +123,7 @@ public sealed class RobotJobManager : IDisposable
         }
 
         var robotFiles = decoded.Keys.Where(path => path.EndsWith(".robot", StringComparison.OrdinalIgnoreCase)).ToArray();
-        if (robotFiles.Length == 0)
-            errors.Add("At least one .robot suite is required.");
+        if (robotFiles.Length == 0) errors.Add("At least one .robot suite is required.");
 
         string? suitePath = null;
         if (!string.IsNullOrWhiteSpace(request.SuitePath))
@@ -154,24 +145,15 @@ public sealed class RobotJobManager : IDisposable
         foreach (var (path, bytes) in decoded)
         {
             string text;
-            try
-            {
-                text = new UTF8Encoding(false, true).GetString(bytes);
-            }
-            catch (DecoderFallbackException)
-            {
-                errors.Add($"Text package file is not valid UTF-8: {path}");
-                continue;
-            }
+            try { text = new UTF8Encoding(false, true).GetString(bytes); }
+            catch (DecoderFallbackException) { errors.Add($"Text package file is not valid UTF-8: {path}"); continue; }
 
             ValidateText(path, text, decoded.Keys, request.AllowCoordinateAutomation, errors, warnings,
                 ref meaningfulActions, ref meaningfulAssertions);
         }
 
-        if (meaningfulActions == 0)
-            errors.Add("Robot package has no meaningful UI action.");
-        if (meaningfulAssertions == 0)
-            errors.Add("Robot package has no meaningful assertion.");
+        if (meaningfulActions == 0) errors.Add("Robot package has no meaningful UI action.");
+        if (meaningfulAssertions == 0) errors.Add("Robot package has no meaningful assertion.");
 
         return new RobotPackageValidationResult(
             errors.Count == 0,
@@ -191,39 +173,28 @@ public sealed class RobotJobManager : IDisposable
         if (!validation.Valid)
             throw new RobotPackageException(ErrorCode.PACKAGE_VALIDATION_FAILED, string.Join(" | ", validation.Errors));
 
+        var runtimeProof = _runtimeStatusProvider?.Invoke();
+        if (!IsAcceptableRuntimeProof(runtimeProof))
+            throw new RobotPackageException(
+                ErrorCode.DRIVER_SESSION_FAILED,
+                "A recent successful real Windows runtime and W3C session verification is required before Robot execution.");
+
         var jobId = Guid.NewGuid().ToString("N");
         var workspace = SafeChildPath(_rootDirectory, jobId);
-        var job = new RobotJob(jobId, request.ExecutionId, workspace, validation, new CancellationTokenSource());
-        if (!_jobs.TryAdd(jobId, job))
-            throw new InvalidOperationException("Unable to allocate Robot job.");
+        var job = new RobotJob(jobId, request.ExecutionId, workspace, validation, runtimeProof!, new CancellationTokenSource());
+        if (!_jobs.TryAdd(jobId, job)) throw new InvalidOperationException("Unable to allocate Robot job.");
 
         job.ExecutionTask = ExecuteAsync(job, request, cancellationToken);
         return Task.FromResult(job.StatusSnapshot());
     }
 
-    public RobotJobStatus GetStatus(JsonElement payload)
-    {
-        var job = GetJob(payload);
-        return job.StatusSnapshot();
-    }
+    public RobotJobStatus GetStatus(JsonElement payload) => GetJob(payload).StatusSnapshot();
 
     public async Task<RobotJobStatus> CancelAsync(JsonElement payload, CancellationToken cancellationToken)
     {
         var job = GetJob(payload);
         job.Cancellation.Cancel();
-        var process = job.Process;
-        if (process is { HasExited: false })
-        {
-            try
-            {
-                // Only the exact Robot process started and tracked by this job may be terminated.
-                process.Kill(entireProcessTree: true);
-            }
-            catch (InvalidOperationException)
-            {
-                // Process exited between checks.
-            }
-        }
+        TerminateTrackedRobot(job);
         if (job.ExecutionTask is not null)
         {
             try { await job.ExecutionTask.WaitAsync(TimeSpan.FromSeconds(15), cancellationToken).ConfigureAwait(false); }
@@ -290,53 +261,32 @@ public sealed class RobotJobManager : IDisposable
 
             job.Status = "COLLECTING_ARTIFACTS";
             var proof = ParseProof(Path.Combine(artifactDirectory, "output.xml"));
-            var failureClassification = run.ExitCode == 0 && proof.Actions > 0 && proof.Assertions > 0
-                ? null
-                : ClassifyFailure(proof.FailureMessage, run.Stdout, run.Stderr, run.ExitCode);
             var passed = run.ExitCode == 0 && proof.Actions > 0 && proof.Assertions > 0;
+            var classification = passed ? null : ClassifyFailure(proof.FailureMessage, run.Stdout, run.Stderr, run.ExitCode);
             var finished = DateTimeOffset.UtcNow;
-            var artifacts = CollectArtifacts(artifactDirectory);
 
             job.Status = passed ? "PASSED" : "FAILED";
             job.FinishedAt = finished;
             job.RobotExitCode = run.ExitCode;
-            job.FailureClassification = failureClassification;
+            job.FailureClassification = classification;
             job.FailureMessage = passed ? null : proof.FailureMessage ?? FirstUsefulMessage(run.Stderr, run.Stdout, "Robot execution failed.");
-            job.Result = new RobotJobResult(
-                job.JobId,
-                job.ExecutionId,
-                job.Status,
-                RealExecution: true,
-                Simulated: false,
-                DesktopExecution: true,
-                RuntimeOs: OperatingSystem.IsWindows() ? "Windows" : Environment.OSVersion.Platform.ToString(),
-                Host: Environment.MachineName,
-                SessionCreated: true,
-                RobotExitCode: run.ExitCode,
-                MeaningfulActions: proof.Actions,
-                MeaningfulAssertions: proof.Assertions,
-                StartedAt: started,
-                FinishedAt: finished,
-                DurationMs: Math.Max(0, (long)(finished - started).TotalMilliseconds),
-                Stdout: Bounded(run.Stdout, 1_000_000),
-                Stderr: Bounded(run.Stderr, 1_000_000),
-                FailureClassification: failureClassification,
-                FailureMessage: job.FailureMessage,
-                Artifacts: artifacts);
+            job.Result = BuildResult(
+                job, started, finished, job.Status, run.ExitCode, proof.Actions, proof.Assertions,
+                run.Stdout, run.Stderr, classification, job.FailureMessage, CollectArtifacts(artifactDirectory));
         }
         catch (OperationCanceledException)
         {
+            TerminateTrackedRobot(job);
             var timedOut = !job.Cancellation.IsCancellationRequested;
             var finished = DateTimeOffset.UtcNow;
             job.Status = timedOut ? "FAILED" : "CANCELLED";
             job.FinishedAt = finished;
             job.FailureClassification = timedOut ? "EXECUTION_TIMEOUT" : "EXECUTION_CANCELLED";
-            job.FailureMessage = timedOut ? "Robot execution exceeded its configured timeout." : "Robot execution was cancelled.";
-            job.Result = new RobotJobResult(
-                job.JobId, job.ExecutionId, job.Status, true, false, true,
-                OperatingSystem.IsWindows() ? "Windows" : Environment.OSVersion.Platform.ToString(),
-                Environment.MachineName, false, null, 0, 0, started, finished,
-                Math.Max(0, (long)(finished - started).TotalMilliseconds), string.Empty, string.Empty,
+            job.FailureMessage = timedOut
+                ? "Robot execution exceeded its configured timeout."
+                : "Robot execution was cancelled.";
+            job.Result = BuildResult(
+                job, started, finished, job.Status, null, 0, 0, string.Empty, string.Empty,
                 job.FailureClassification, job.FailureMessage, CollectExistingArtifacts(job.Workspace));
         }
         catch (RobotPackageException exception)
@@ -382,9 +332,79 @@ public sealed class RobotJobManager : IDisposable
         await process.WaitForExitAsync(cancellationToken).ConfigureAwait(false);
         var stdout = await stdoutTask.ConfigureAwait(false);
         var stderr = await stderrTask.ConfigureAwait(false);
+        var exitCode = process.ExitCode;
         job.Process = null;
         process.Dispose();
-        return new ProcessResult(process.ExitCode, stdout, stderr);
+        return new ProcessResult(exitCode, stdout, stderr);
+    }
+
+    private static RobotJobResult BuildResult(
+        RobotJob job,
+        DateTimeOffset started,
+        DateTimeOffset finished,
+        string status,
+        int? exitCode,
+        int actions,
+        int assertions,
+        string stdout,
+        string stderr,
+        string? classification,
+        string? message,
+        IReadOnlyList<RobotArtifact> artifacts)
+    {
+        var proof = job.RuntimeProof;
+        return new RobotJobResult(
+            JobId: job.JobId,
+            ExecutionId: job.ExecutionId,
+            Status: status,
+            RealExecution: proof.RealExecution,
+            Simulated: proof.Simulated,
+            DesktopExecution: proof.DesktopExecution,
+            RuntimeOs: proof.RuntimeOs,
+            Host: Environment.MachineName,
+            AppiumUrl: proof.DriverSession.AppiumUrl,
+            ApplicationPath: proof.Application.ExecutablePath,
+            RuntimeProofSessionId: proof.DriverSession.SessionId,
+            RuntimeProofVerifiedAt: proof.DriverSession.LastVerifiedAt,
+            SessionCreated: proof.DriverSession.SessionCreated,
+            RobotExitCode: exitCode,
+            MeaningfulActions: actions,
+            MeaningfulAssertions: assertions,
+            StartedAt: started,
+            FinishedAt: finished,
+            DurationMs: Math.Max(0, (long)(finished - started).TotalMilliseconds),
+            Stdout: Bounded(stdout, 1_000_000),
+            Stderr: Bounded(stderr, 1_000_000),
+            FailureClassification: classification,
+            FailureMessage: message,
+            Artifacts: artifacts);
+    }
+
+    private static bool IsAcceptableRuntimeProof(WindowsRuntimeStatus? status) =>
+        status is
+        {
+            Ready: true,
+            RealExecution: true,
+            Simulated: false,
+            DesktopExecution: true,
+            RuntimeOs: "Windows",
+            DriverSession.Ready: true,
+            DriverSession.SessionCreated: true,
+            Application.PathExists: true
+        } &&
+        status.DriverSession.LastVerifiedAt is { } verifiedAt &&
+        DateTimeOffset.UtcNow - verifiedAt <= RuntimeProofMaximumAge;
+
+    private static void TerminateTrackedRobot(RobotJob job)
+    {
+        var process = job.Process;
+        if (process is null) return;
+        try
+        {
+            if (!process.HasExited) process.Kill(entireProcessTree: true);
+        }
+        catch (InvalidOperationException) { }
+        catch (System.ComponentModel.Win32Exception) { }
     }
 
     private static void MaterializePackage(RobotPackageRequest request, string workspace)
@@ -392,8 +412,7 @@ public sealed class RobotJobManager : IDisposable
         Directory.CreateDirectory(workspace);
         foreach (var file in request.Files)
         {
-            var relative = NormalizeRelativePath(file.Path);
-            var destination = SafeChildPath(workspace, relative);
+            var destination = SafeChildPath(workspace, NormalizeRelativePath(file.Path));
             Directory.CreateDirectory(Path.GetDirectoryName(destination)!);
             File.WriteAllBytes(destination, Convert.FromBase64String(file.ContentBase64));
         }
@@ -414,7 +433,9 @@ public sealed class RobotJobManager : IDisposable
             ValidateEnvironmentName(pair.Value);
             var value = Environment.GetEnvironmentVariable(pair.Value);
             if (value is null)
-                throw new RobotPackageException(ErrorCode.PACKAGE_VALIDATION_FAILED, $"Required local environment reference is unavailable: {pair.Value}");
+                throw new RobotPackageException(
+                    ErrorCode.PACKAGE_VALIDATION_FAILED,
+                    $"Required local environment reference is unavailable: {pair.Value}");
             environment[pair.Key] = value;
         }
         return environment;
@@ -474,8 +495,7 @@ public sealed class RobotJobManager : IDisposable
         ICollection<string> errors,
         string kind)
     {
-        if (imported.Contains("${", StringComparison.Ordinal) || imported.Contains("%{", StringComparison.Ordinal))
-            return;
+        if (imported.Contains("${", StringComparison.Ordinal) || imported.Contains("%{", StringComparison.Ordinal)) return;
         imported = imported.Trim('"', '\'');
         try
         {
@@ -554,8 +574,7 @@ public sealed class RobotJobManager : IDisposable
                      .OrderBy(path => path, StringComparer.OrdinalIgnoreCase))
         {
             var info = new FileInfo(path);
-            if (info.Length > MaxReturnedArtifactBytes || returnedBytes + info.Length > MaxReturnedArtifactBytes)
-                continue;
+            if (info.Length > MaxReturnedArtifactBytes || returnedBytes + info.Length > MaxReturnedArtifactBytes) continue;
             var bytes = File.ReadAllBytes(path);
             returnedBytes += bytes.Length;
             artifacts.Add(new RobotArtifact(
@@ -599,9 +618,9 @@ public sealed class RobotJobManager : IDisposable
     private static ErrorCode ClassifyDryRun(string stdout, string stderr)
     {
         var combined = stdout + "\n" + stderr;
-        if (Regex.IsMatch(combined, @"(?i)(resource|library|keyword).*(not found|does not exist|failed to import)"))
-            return ErrorCode.KEYWORD_IMPORT_DEFECT;
-        return ErrorCode.SCRIPT_DEFECT;
+        return Regex.IsMatch(combined, @"(?i)(resource|library|keyword).*(not found|does not exist|failed to import)")
+            ? ErrorCode.KEYWORD_IMPORT_DEFECT
+            : ErrorCode.SCRIPT_DEFECT;
     }
 
     private static string ClassifyFailure(string? outputFailure, string stdout, string stderr, int exitCode)
@@ -616,8 +635,7 @@ public sealed class RobotJobManager : IDisposable
     private static string FirstUsefulMessage(string primary, string secondary, string fallback)
     {
         var value = string.IsNullOrWhiteSpace(primary) ? secondary : primary;
-        if (string.IsNullOrWhiteSpace(value)) return fallback;
-        return Bounded(value.Trim(), 4096);
+        return string.IsNullOrWhiteSpace(value) ? fallback : Bounded(value.Trim(), 4096);
     }
 
     private static string Bounded(string value, int maximum) => value.Length <= maximum ? value : value[..maximum];
@@ -644,11 +662,8 @@ public sealed class RobotJobManager : IDisposable
         job.FinishedAt = finished;
         job.FailureClassification = classification;
         job.FailureMessage = message;
-        job.Result = new RobotJobResult(
-            job.JobId, job.ExecutionId, job.Status, true, false, true,
-            OperatingSystem.IsWindows() ? "Windows" : Environment.OSVersion.Platform.ToString(),
-            Environment.MachineName, false, null, 0, 0, started, finished,
-            Math.Max(0, (long)(finished - started).TotalMilliseconds), string.Empty, string.Empty,
+        job.Result = BuildResult(
+            job, started, finished, job.Status, null, 0, 0, string.Empty, string.Empty,
             classification, message, CollectExistingArtifacts(job.Workspace));
     }
 
@@ -657,6 +672,7 @@ public sealed class RobotJobManager : IDisposable
         foreach (var job in _jobs.Values)
         {
             job.Cancellation.Cancel();
+            TerminateTrackedRobot(job);
             job.Cancellation.Dispose();
             job.Process?.Dispose();
         }
@@ -667,6 +683,7 @@ public sealed class RobotJobManager : IDisposable
         string executionId,
         string workspace,
         RobotPackageValidationResult validation,
+        WindowsRuntimeStatus runtimeProof,
         CancellationTokenSource cancellation)
     {
         private readonly object _gate = new();
@@ -681,6 +698,7 @@ public sealed class RobotJobManager : IDisposable
         public string ExecutionId { get; } = executionId;
         public string Workspace { get; } = workspace;
         public RobotPackageValidationResult Validation { get; } = validation;
+        public WindowsRuntimeStatus RuntimeProof { get; } = runtimeProof;
         public CancellationTokenSource Cancellation { get; } = cancellation;
         public DateTimeOffset CreatedAt { get; } = DateTimeOffset.UtcNow;
         public Task? ExecutionTask { get; set; }
@@ -698,7 +716,8 @@ public sealed class RobotJobManager : IDisposable
         {
             lock (_gate)
             {
-                return new RobotJobStatus(JobId, ExecutionId, _status, CreatedAt, _startedAt, _finishedAt,
+                return new RobotJobStatus(
+                    JobId, ExecutionId, _status, CreatedAt, _startedAt, _finishedAt,
                     _robotExitCode, _failureClassification, _failureMessage);
             }
         }

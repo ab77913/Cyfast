@@ -25,12 +25,12 @@ jobs:
           git status --short
           git branch --show-current
           git log -1 --oneline
-          tar --exclude=.git --exclude=cyfast-source.tar.gz -czf cyfast-source.tar.gz .
+          tar --exclude=.git -czf /tmp/cyfast-source.tar.gz .
 
       - name: Upload source archive
         uses: actions/upload-artifact@v4
         with:
           name: cyfast-source-${{ github.sha }}
-          path: cyfast-source.tar.gz
+          path: /tmp/cyfast-source.tar.gz
           if-no-files-found: error
           retention-days: 1

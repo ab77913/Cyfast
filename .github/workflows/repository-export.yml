@@ -1,0 +1,33 @@
+name: Repository Export
+
+on:
+  push:
+    branches:
+      - codex/complete-windows-execution-20260819
+
+permissions:
+  contents: read
+
+jobs:
+  export:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Create source archive
+        run: |
+          git status --short
+          git branch --show-current
+          git log -1 --oneline
+          tar --exclude=.git -czf cyfast-source.tar.gz .
+
+      - name: Upload source archive
+        uses: actions/upload-artifact@v4
+        with:
+          name: cyfast-source-${{ github.sha }}
+          path: cyfast-source.tar.gz
+          if-no-files-found: error
+          retention-days: 1

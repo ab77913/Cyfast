@@ -1,0 +1,26 @@
+{
+  "local": {
+    "protocol": "http",
+    "host": "localhost",
+    "port": 8092,
+    "storage_path": "./storage",
+    "max_file_size": 104857600,
+    "allowed_mime_types": []
+  },
+  "staging": {
+    "protocol": "http",
+    "host": "storage-service",
+    "port": 8092,
+    "storage_path": "./storage",
+    "max_file_size": 104857600,
+    "allowed_mime_types": []
+  },
+  "production": {
+    "protocol": "https",
+    "host": "storage.example.com",
+    "port": 443,
+    "storage_path": "/var/storage",
+    "max_file_size": 104857600,
+    "allowed_mime_types": []
+  }
+}

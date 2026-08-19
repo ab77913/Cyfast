@@ -1,0 +1,15 @@
+services:
+  cyfastui:
+    image: cyfastui
+    container_name: cyfastui
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - 3000:3000
+    environment:
+      - ENVIRONMENT=development
+    extra_hosts:  
+      - "host.docker.internal:host-gateway"
+
+      

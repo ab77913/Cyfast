@@ -1,0 +1,23 @@
+{
+    "local": {
+        "enable_file_logs": true,
+        "enable_http_post_logs": true,
+        "enable_rabbitmq_logs": true,
+        "logger_service_url": "http://localhost:8090",
+        "rabbitmq_logging_hostname": "localhost"
+    },
+    "staging": {
+        "enable_file_logs": true,
+        "enable_http_post_logs": true,
+        "enable_rabbitmq_logs": true,
+        "logger_service_url": "http://host.docker.internal:8090",
+        "rabbitmq_logging_hostname": "host.docker.internal"
+    },
+    "production": {
+        "enable_file_logs": true,
+        "enable_http_post_logs": true,
+        "enable_rabbitmq_logs": true,
+        "logger_service_url": "http://20.204.6.69:8090",
+        "rabbitmq_logging_hostname": "20.204.6.69"
+    }
+}

@@ -1,0 +1,14 @@
+.carousel > .slider-wrapper {
+  position: relative;
+  top: 120px;
+}
+.carousel > .carousel-status {
+  display: none;
+}
+
+@media (max-width: 1024px) {
+  .carousel > .slider-wrapper {
+    position: relative;
+    top: 80px;
+  }
+}

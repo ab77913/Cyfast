@@ -1,0 +1,36 @@
+document_type: LLR
+domain: hospital_management
+task: requirement_generation
+usage: few_shot_guidance_only
+examples:
+  - example_id: LLR_REQ_001
+    source_excerpt: "If phone number is blank on Patient Registration save, the system shall display 'Phone number is required' and shall not save the record."
+    expected_output:
+      requirement_title: "Required phone number validation"
+      requirement_description: "When phone number is blank on Patient Registration save, the system shall display the message 'Phone number is required' and shall not save the patient record."
+      rationale: "Contact information is mandatory for follow-up communication related to visits and prescriptions."
+      priority: "High"
+
+  - example_id: LLR_REQ_002
+    source_excerpt: "Visit date shall not accept a date earlier than the patient's registration date."
+    expected_output:
+      requirement_title: "Visit date lower bound validation"
+      requirement_description: "The Visit Management module shall reject a visit date that is earlier than the selected patient's registration date."
+      rationale: "A visit cannot logically occur before the patient exists in the system."
+      priority: "High"
+
+  - example_id: LLR_REQ_003
+    source_excerpt: "Prescription duration shall accept only positive whole numbers up to 90 days."
+    expected_output:
+      requirement_title: "Prescription duration range validation"
+      requirement_description: "The Prescription Management module shall accept prescription duration only as a positive whole number from 1 to 90 days."
+      rationale: "Bounded duration values prevent invalid prescription records in patient history."
+      priority: "Medium"
+
+  - example_id: LLR_REQ_004
+    source_excerpt: "Patient History shall show 'No records found' when the selected patient has no visits or prescriptions."
+    expected_output:
+      requirement_title: "Empty patient history message"
+      requirement_description: "When the selected patient has no visits or prescriptions, the Patient History module shall display the message 'No records found'."
+      rationale: "A clear empty-state message avoids confusion during first-time patient review."
+      priority: "Low"

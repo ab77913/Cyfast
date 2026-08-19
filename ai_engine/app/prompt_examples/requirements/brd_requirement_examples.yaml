@@ -1,0 +1,28 @@
+document_type: BRD
+domain: hospital_management
+task: requirement_generation
+usage: few_shot_guidance_only
+examples:
+  - example_id: BRD_REQ_001
+    source_excerpt: "The hospital management system shall provide a dashboard showing today's patient visits, active staff count, and pending prescriptions."
+    expected_output:
+      requirement_title: "Operational dashboard summary"
+      requirement_description: "The system shall display a dashboard with today's patient visit count, active staff count, and pending prescription count."
+      rationale: "Hospital administrators need a single view of daily operational activity across visits, staff, and prescriptions."
+      priority: "High"
+
+  - example_id: BRD_REQ_002
+    source_excerpt: "Hospital administrators must be able to maintain staff records including name, role, department, and contact details."
+    expected_output:
+      requirement_title: "Staff record maintenance"
+      requirement_description: "The system shall allow hospital administrators to create and update staff records with name, role, department, and contact details."
+      rationale: "Accurate staff records support visit scheduling, prescription assignment, and operational reporting."
+      priority: "High"
+
+  - example_id: BRD_REQ_003
+    source_excerpt: "Front desk staff shall register new patients with demographic and emergency contact information before a visit is recorded."
+    expected_output:
+      requirement_title: "Patient registration before visit"
+      requirement_description: "The system shall require front desk staff to register a patient with demographic and emergency contact details before recording a visit."
+      rationale: "A complete patient record is needed to link visits, prescriptions, and patient history."
+      priority: "High"

@@ -1,0 +1,11 @@
+{
+  "local": {
+    "dir_path": "D:/Work/Reports"
+  },
+  "staging": {
+    "dir_path": "/var/data/reports"
+  },
+  "production": {
+    "dir_path": "/var/data/reports"
+  }
+}

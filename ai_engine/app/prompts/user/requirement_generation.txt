@@ -1,0 +1,16 @@
+project_id={project_id}{org_line}
+
+Produce requirements for these categories (where supported by excerpts): {categories_label}
+source_document_ids={source_document_ids}
+
+SOURCE DOCUMENT EXCERPTS:
+{document_context}{additional_block}
+
+Return JSON with top-level array `requirements`. Each item: `requirement_category` (uppercase, one of the requested categories), `requirement_no` (string), `title`, `description`, `rationale`, `priority` (low|medium|high).
+
+Generation quality constraints:
+- Keep each requirement atomic: one primary behavior/rule/constraint per item.
+- Keep wording specific and testable with observable outcomes.
+- If source text supports acceptance conditions, embed them naturally in `description` or `rationale` (do not add new fields).
+- Avoid unsupported assumptions and inferred details not grounded in the provided excerpts.
+- Avoid near-duplicate requirements with only wording differences.

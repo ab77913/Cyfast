@@ -1,0 +1,25 @@
+{
+  "mongodb": {
+    "local": {
+      "username": "mongoadmin",
+      "password": "1secure*password1",
+      "database": "storage_service_db",
+      "host": "127.0.0.1",
+      "port": "27017"
+    },
+    "staging": {
+      "username": "mongoadmin",
+      "password": "1secure*password1",
+      "database": "storage_service_db",
+      "host": "host.docker.internal",
+      "port": "27017"
+    },
+    "production": {
+      "username": "mongoadmin",
+      "password": "1secure*password1",
+      "database": "storage_service_db",
+      "host": "mongodb-server",
+      "port": "27017"
+    }
+  }
+}

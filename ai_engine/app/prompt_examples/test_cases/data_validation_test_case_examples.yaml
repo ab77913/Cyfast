@@ -1,0 +1,94 @@
+domain: hospital_management
+task: test_case_generation
+usage: few_shot_guidance_only
+examples:
+  - example_id: TC_VAL_001
+    source_scenario:
+      scenario_name: "Reject patient registration without phone number"
+      scenario_description: "Verify that saving a patient record with a blank phone number shows a validation message and does not create the record."
+    expected_output:
+      test_case_name: "Verify required phone number validation on patient registration"
+      test_case_description: "Verify that the system rejects patient registration when phone number is blank."
+      test_type: "VALIDATION"
+      priority: "High"
+      preconditions:
+        - "Hospital Management System is open."
+        - "Patient Registration screen is accessible."
+      test_steps:
+        - step_no: 1
+          action: "Enter valid name, age, and gender but leave phone number blank."
+          expected: "Phone number field remains empty."
+        - step_no: 2
+          action: "Click Save."
+          expected: "Validation message 'Phone number is required' is displayed."
+      test_data:
+        patient_name: "Anita Sharma"
+        age: 42
+        gender: "Female"
+        phone: ""
+      expected_result: "No patient record is created and the form remains open with the validation message."
+      tags:
+        - "patient-registration"
+        - "validation"
+      automation_percentage: 85
+
+  - example_id: TC_VAL_002
+    source_scenario:
+      scenario_name: "Reject prescription duration above maximum limit"
+      scenario_description: "Verify that entering a prescription duration of 91 days is rejected with a validation message."
+    expected_output:
+      test_case_name: "Verify prescription duration upper boundary validation"
+      test_case_description: "Verify that prescription duration above 90 days is rejected during prescription save."
+      test_type: "BOUNDARY"
+      priority: "Medium"
+      preconditions:
+        - "An existing patient visit is available for prescription entry."
+        - "Prescription Management screen is accessible."
+      test_steps:
+        - step_no: 1
+          action: "Enter valid medicine details and set duration to 91 days."
+          expected: "Duration value is entered in the form."
+        - step_no: 2
+          action: "Click Save."
+          expected: "Validation message indicates duration must be between 1 and 90 days."
+      test_data:
+        medicine_name: "Paracetamol"
+        dosage: "650 mg"
+        frequency: "Once daily"
+        duration_days: 91
+      expected_result: "Prescription is not saved and the validation message remains visible."
+      tags:
+        - "prescription-management"
+        - "boundary"
+      automation_percentage: 88
+
+  - example_id: TC_VAL_003
+    source_scenario:
+      scenario_name: "Dashboard updates after visit and prescription save"
+      scenario_description: "Verify that dashboard visit and prescription counts increase after saving a new visit and prescription without reloading the page."
+    expected_output:
+      test_case_name: "Verify dashboard counts reflect saved visit and prescription data"
+      test_case_description: "Verify that dashboard summary counts match the number of saved visits and open prescriptions."
+      test_type: "DATA_VALIDATION"
+      priority: "Medium"
+      preconditions:
+        - "Dashboard is open with known baseline visit and prescription counts."
+        - "A new visit and prescription can be saved."
+      test_steps:
+        - step_no: 1
+          action: "Note current dashboard visit and prescription counts."
+          expected: "Baseline counts are visible on the Dashboard."
+        - step_no: 2
+          action: "Save a new visit and linked prescription."
+          expected: "Visit and prescription records are saved successfully."
+        - step_no: 3
+          action: "Return to the Dashboard without reloading the page."
+          expected: "Visit and prescription counts increase by one each and match saved records."
+      test_data:
+        baseline_visits: 12
+        baseline_prescriptions: 5
+      expected_result: "Dashboard counts accurately reflect the updated visit and prescription totals."
+      tags:
+        - "dashboard"
+        - "data-validation"
+      automation_percentage: 70

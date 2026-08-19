@@ -1,0 +1,26 @@
+﻿{
+    "generatedAt":  "2026-08-13T19:32:01.8135687Z",
+    "baseCommit":  "6be343e",
+    "head":  "eb4996141a613dc3b8a3b9b518438eca4f614a48",
+    "changedSourceFiles":  143,
+    "w1UiFilesChecked":  [
+                             "ui/src/contexts/JWTContext.jsx",
+                             "ui/src/layouts/AdminLayout/NavBar/NavMiddleTabs/index.jsx",
+                             "ui/src/menu-items.jsx",
+                             "ui/src/routes.jsx",
+                             "ui/src/utils/cyfastAxios.jsx",
+                             "ui/src/utils/windowsApi.js",
+                             "ui/src/views/windows-nodes/Detail.jsx",
+                             "ui/src/views/windows-nodes/List.jsx",
+                             "ui/src/views/windows-nodes/SessionPanel.jsx",
+                             "ui/src/views/windows-nodes/UiTreePanel.jsx",
+                             "ui/src/views/windows-nodes/__tests__/windowsNodes.test.mjs",
+                             "ui/src/views/windows-nodes/windowsNodesLogic.js"
+                         ],
+    "status":  "PASS",
+    "errors":  [
+
+               ],
+    "fullRepoLintExit":  1,
+    "note":  "Full-repo lint may contain pre-existing legacy debt unrelated to W1."
+}

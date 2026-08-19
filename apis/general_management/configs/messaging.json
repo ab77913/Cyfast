@@ -1,0 +1,69 @@
+{
+  "rabbitmq": {
+    "local": {
+      "username": "guest",
+      "password": "guest",
+      "host": "localhost",
+      "port": "5672"
+    },
+    "staging": {
+      "username": "guest",
+      "password": "guest",
+      "host": "host.docker.internal",
+      "port": "5672"
+    },
+    "production": {
+      "username": "guest",
+      "password": "guest",
+      "host": "20.204.6.69",
+      "port": "5672"
+    }
+  },
+  "azure_messaging": {
+    "local": {}
+  },
+  "queues": {
+    "parser_request": "test_parsing_request_queue",
+    "parser_response": "test_parsing_response_queue",
+    "project_status": "updateprojectstatus-request-queue",
+    "scheduler_request": "scheduler_request_queue",
+    "execution_request": "test_execution_request_queue",
+    "execution_control_request": "test_execution_control_queue",
+    "execution_status_response": "test_execution_status_queue",
+    "execution_response": "test_execution_response_queue",
+    "ai_rag_document_indexed": "ai_rag_document_indexed",
+    "requirement_generation_request": "requirement_generation_request",
+    "test_scenario_generation_request": "test_scenario_generation_request",
+    "windows_outbox_v1": "windows.outbox.v1"
+  },
+  "exchanges": {
+    "execution_request": "agent_execution_deploy_exchange",
+    "execution_control_request": "orchestration_control_exchange",
+    "execution_testcase": "test_status_exchange",
+    "execution_response": "execution_completion_status_exchange",
+    "agent_registration_response": "agent_registration_exchange",
+    "agent_registration_acknowledgement": "ack_agent_registered",
+    "agent_heartbeat_response": "heartbeat_exchange",
+    "agent_parsing_request": "agent_parsing_exchange",
+    "agent_control_request": "agent_command_exchange",
+    "windows_events_v1": "windows.events.v1"
+  },
+  "windows_events": {
+    "agent_enrolled": "windows.agent.enrolled.v1",
+    "agent_connected": "windows.agent.connected.v1",
+    "agent_disconnected": "windows.agent.disconnected.v1",
+    "capabilities_updated": "windows.capabilities.updated.v1",
+    "health_changed": "windows.health.changed.v1",
+    "session_requested": "windows.session.requested.v1",
+    "session_started": "windows.session.started.v1",
+    "session_failed": "windows.session.failed.v1",
+    "session_ended": "windows.session.ended.v1",
+    "command_requested": "windows.command.requested.v1",
+    "command_acknowledged": "windows.command.acknowledged.v1",
+    "command_completed": "windows.command.completed.v1",
+    "command_failed": "windows.command.failed.v1",
+    "ui_snapshot_created": "windows.ui_snapshot.created.v1",
+    "screenshot_created": "windows.screenshot.created.v1",
+    "evidence_created": "windows.evidence.created.v1"
+  }
+}

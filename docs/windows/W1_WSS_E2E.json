@@ -1,0 +1,63 @@
+﻿{
+    "generatedAt":  "2026-08-13T19:32:58.4477875Z",
+    "runs":  3,
+    "passed":  true,
+    "checks":  [
+                   {
+                       "name":  "Reject insecure non-loopback ws",
+                       "passed":  true
+                   },
+                   {
+                       "name":  "Production startup fails without TLS config",
+                       "passed":  true
+                   },
+                   {
+                       "name":  "WSS health with client cert run 1",
+                       "passed":  true
+                   },
+                   {
+                       "name":  "Untrusted/invalid server trust rejected run 1",
+                       "passed":  true
+                   },
+                   {
+                       "name":  "Hostname mismatch rejected run 1",
+                       "passed":  true
+                   },
+                   {
+                       "name":  "Missing client certificate rejected run 1",
+                       "passed":  true
+                   },
+                   {
+                       "name":  "WSS health with client cert run 2",
+                       "passed":  true
+                   },
+                   {
+                       "name":  "Untrusted/invalid server trust rejected run 2",
+                       "passed":  true
+                   },
+                   {
+                       "name":  "Hostname mismatch rejected run 2",
+                       "passed":  true
+                   },
+                   {
+                       "name":  "Missing client certificate rejected run 2",
+                       "passed":  true
+                   },
+                   {
+                       "name":  "WSS health with client cert run 3",
+                       "passed":  true
+                   },
+                   {
+                       "name":  "Untrusted/invalid server trust rejected run 3",
+                       "passed":  true
+                   },
+                   {
+                       "name":  "Hostname mismatch rejected run 3",
+                       "passed":  true
+                   },
+                   {
+                       "name":  "Missing client certificate rejected run 3",
+                       "passed":  true
+                   }
+               ]
+}

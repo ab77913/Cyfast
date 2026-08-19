@@ -1,0 +1,3 @@
+BEGIN
+EXEC USP_GET_EXECUTION_STATISTICS @organizationId = @organizationId
+END

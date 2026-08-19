@@ -1,0 +1,304 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Test Summary Report</title>
+    <style>
+      /* CSS styles for the test execution log */
+      body {
+        font-family: ui-monospace;
+        line-height: 1.2;
+        font-size: 12px;
+      }
+      .container {
+        background-color: #fff;
+        opacity: 0.9;
+      }
+      h1 {
+        text-align: center;
+      }
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-bottom: 20px;
+      }
+      th,
+      td {
+        padding: 8px;
+        border: 1px solid #ddd;
+        text-align: left;
+      }
+      th {
+        background-color: #19a7b1;
+      }
+      .pass {
+        background-color: #dff0d8;
+      }
+      .td-back-color {
+        background: #19a7b1;
+      }
+      .fail {
+        background-color: #f2dede;
+      }
+      .skip {
+        background-color: #fcf8e3;
+      }
+      .h1-tag {
+        text-align: center;
+        margin-bottom: 0;
+        font-size: 16pt;
+      }
+      .h1-tag-pname {
+        text-align: center;
+        /* font-style: italic; */
+        font-family: serif;
+        margin-bottom: -18px;
+        font-size: 18pt;
+      }
+      .h2-tag-pname {
+        text-align: center;
+        font-style: italic;
+        margin-top: 0;
+        font-size: 14pt;
+        margin-bottom: 0;
+      }
+      .div-border {
+        border: none;
+        /* border-bottom: solid windowtext 1.5pt; */
+        padding: 0cm 0cm 1pt 0cm;
+      }
+      .line-height-new {
+        height: 270px;
+        text-align: center;
+      }
+      .line-height-new2 {
+        height: 160px;
+        text-align: center;
+      }
+      .span-right {
+        float: right;
+      }
+      .margin-p-tag {
+        margin-top: 0;
+        margin-bottom: 0;
+        font-size: 12px;
+      }
+      .title-page {
+        page-break-after: always;
+      }
+      .content-page {
+        page-break-before: always;
+        height: 100%;
+      }
+      /* Page breaks */
+      @media print {
+        .title-page {
+          page-break-after: always;
+        }
+        .content-page {
+          page-break-before: always;
+          height: 100%;
+        }
+      }
+      .box-side {
+        border-left: 30px solid #19a7b1;
+        margin: 0px;
+      }
+    </style>
+  </head>
+  <body class="box-side">
+    <div class="container">
+      <div class="line-height-new2"></div>
+      <div class="line-height-new">
+        <img src="Cyient_Logo_mi.jpg" style="width: 30%" />
+        <br />
+        <img src="CyFastLogo.png" style="width: 30%" />
+      </div>
+      <div class="title-page">
+        <div class="div-border">
+          <h1 class="h1-tag-pname"><b>{{project.name}}</b></h1>
+          <h1 class="h1-tag">TEST SUMMARY REPORT</h1>
+        </div>
+        <div>
+          <p class="h2-tag-pname">Version 1.0</p>
+          <p class="h2-tag-pname">{{generated_date}}</p>
+        </div>
+      </div>
+      <div class="content-page" style="margin-left: 10px; margin-right: 10px">
+        <h1><b>TEST SUMMARY REPORT DETAILS</b></h1>
+        <div id="report_content">
+          <table style="border: none">
+            <tr style="border: none">
+              <td style="border: none"><b>INTRODUCTION (-)</b></td>
+              <td style="border: none"></td>
+            </tr>
+            <tr>
+              <td style="border: none">Define the Introduction</td>
+            </tr>
+            <tr style="border: none">
+              <td style="border: none"><b>PURPOSE (-)</b></td>
+              <td style="border: none"></td>
+            </tr>
+            <tr>
+              <td style="border: none">Define the purpose</td>
+            </tr>
+            <tr style="border: none">
+              <td style="border: none"><b>SCOPE (-)</b></td>
+              <td style="border: none"></td>
+            </tr>
+            <tr>
+              <td style="border: none">Define the scope</td>
+            </tr>
+            <tr style="border: none">
+              <td style="border: none"><b>ABBREVIATIONS & GLOSSARY (-)</b></td>
+              <td style="border: none"></td>
+            </tr>
+            <tr>
+              <td style="border: none">Define the Abbreviations used in the document & the terms & definitions used in the document</td>
+            </tr>
+            <tr style="border: none">
+              <td style="border: none"><b>NAMING CONVENTION (-)</b></td>
+              <td style="border: none"></td>
+            </tr>
+            <tr>
+              <td style="border: none">Define the Naming Conventions, if any</td>
+            </tr>
+            <tr style="border: none">
+              <td style="border: none"><b>HARDWARE TEST CONFIGURATIONS (-)</b></td>
+              <td style="border: none"></td>
+            </tr>
+            <tr>
+              <td style="border: none">Define the Hardware Test Configurations, if any</td>
+            </tr>
+            <tr style="border: none">
+              <td style="border: none"><b>SOFTWARE TEST CONFIGURATIONS (-)</b></td>
+              <td style="border: none"></td>
+            </tr>
+            <tr>
+              <td style="border: none">Define the Software Test Configurations OR Test Environment Settings, if any</td>
+            </tr>
+          </table>
+          <h2>GENERAL INFORMATION</h2>
+          <table>
+            <tr>
+              <td class="td-back-color"><b>PROJECT NAME</b></td>
+              <td colspan="3">PROJECT Name</td>
+            </tr>
+            <tr>
+              <td class="td-back-color"><b>PROJECT CODE</b></td>
+              <td colspan="3">Project Code</td>
+            </tr>
+            <tr>
+              <td class="td-back-color"><b>REVIEWER NAME</b></td>
+              <td colspan="3">Reviewer name & signature for all reviewers (Could be multiple) Date & Time</td>
+            </tr>
+            <tr>
+              <td class="td-back-color"><b>APPROVER NAME</b></td>
+              <td colspan="3">Approver name & signature for all reviewers (Could be multiple) Date & Time</td>
+            </tr>
+          </table>
+          <p>
+            <b>SELECT ORCHESTRATIONS </b>Select Orchestrations to be included in the report from the list of orchestrations available in the
+            selected project
+          </p>
+          <p>
+            <b>SELECT EXECUTION INSTANCES</b>Select execution instances to be included in the report from the list of execution instances
+            available for each above selected orchestration
+          </p>
+          <h2>EXECUTION SUMMARY</h2>
+          <table>
+            <tr>
+              <th>ORCHESTRATION NAME</th>
+              <th>EXECUTION INSTANCE ID</th>
+              <th>TEST CASE NAME</th>
+              <th>TAG</th>
+              <th>STATUS</th>
+              <th>START DATE & TIME</th>
+              <th>END DATE & TIME</th>
+              <th>RELEASE NUMBER</th>
+              <th>BUILD NUMBER</th>
+              <th>TEST ENVIRONMENT INFO</th>
+            </tr>
+            <tr>
+              <td></td>
+              <td></td>
+              <td></td>
+              <td></td>
+              <td></td>
+              <td></td>
+              <td></td>
+              <td></td>
+              <td></td>
+              <td></td>
+            </tr>
+          </table>
+          <h2>PROJECT PARAMETER SETTINGS</h2>
+          <p>List all project configuration parameters with Parameter Names and their corresponding selected/set values</p>
+          <h2>TEST CASE EXECUTION DETAILS</h2>
+          <table>
+            <tr>
+              <th>PASSED TEST CASE COUNT</th>
+              <th>FAILED TEST CASE COUNT</th>
+              <th>NOT EXECUTED TEST CASE COUNT</th>
+            </tr>
+            <tr>
+              <td></td>
+              <td></td>
+              <td></td>
+            </tr>
+          </table>
+          <h2>REQUIREMENT COVERAGE</h2>
+          <p><b>REQUIREMENT COVERAGE:</b> Requirement Coverage % for the project.</p>
+          <table>
+            <tr>
+              <th>PPASSED REQUIREMENTS (%)</th>
+              <th>FAILED REQUIREMENTS(%)</th>
+              <th>NOT EXECUTED REQUIREMENTS (%)</th>
+            </tr>
+            <tr>
+              <td></td>
+              <td></td>
+              <td></td>
+            </tr>
+          </table>
+          <h2>RISK REQUIREMENT COVERAGE</h2>
+          <p><b>RISK REQUIREMENT COVERAGE:</b>Risk Requirement Coverage % for the project.</p>
+          <table>
+            <tr>
+              <th>PPASSED RISK REQUIREMENTS (%)</th>
+              <th>FAILED RISK REQUIREMENTS(%)</th>
+              <th>NOT EXECUTED RISK REQUIREMENTS (%)</th>
+            </tr>
+            <tr>
+              <td></td>
+              <td></td>
+              <td></td>
+            </tr>
+          </table>
+          <h2>DEVIATIONS</h2>
+          <p>Define the deviations, if any</p>
+          <h2>TRACEABILITY</h2>
+          <table>
+            <tr>
+              <th>REQUIREMENTS</th>
+              <th>TEST CASES</th>
+              <th>TEST STATUS</th>
+              <th>OPEN DEFECT</th>
+            </tr>
+            <tr>
+              <td>ID & DESCRIPTION</td>
+              <td>ID & NAME</td>
+              <td>PASSED, FAILED,NOT EXECUTED</td>
+              <td>ID</td>
+            </tr>
+          </table>
+          <h2>ATTACHMENTS</h2>
+          <p>Define attachments, if any</p>
+          <h2>ACCEPTANCE CRITERIA</h2>
+          <p>Define acceptance criteria</p>
+          <h2>CONCLUSION</h2>
+          <p>Conclusion</p>
+        </div>
+      </div>
+    </div>
+  </body>
+</html>

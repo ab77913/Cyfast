@@ -1,0 +1,33 @@
+domain: hospital_management
+task: test_scenario_generation
+usage: few_shot_guidance_only
+examples:
+  - example_id: SCN_WF_001
+    source_requirement:
+      requirement_title: "Patient care workflow support"
+      requirement_description: "The system shall support the patient care workflow from registration through visit recording, prescription creation, and patient history review."
+    expected_output:
+      scenario_name: "Complete patient care workflow from registration to history"
+      scenario_description: "Verify that a patient can be registered, assigned a visit, given a prescription, and then viewed in Patient History in sequence."
+      scenario_type: "Workflow"
+      priority: "High"
+
+  - example_id: SCN_WF_002
+    source_requirement:
+      requirement_title: "Prescription record persistence"
+      requirement_description: "The system shall persist a prescription with medicine name, dosage, frequency, duration, prescribing doctor, and linked patient visit when a doctor saves a prescription."
+    expected_output:
+      scenario_name: "Add prescription after visit creation"
+      scenario_description: "Verify that a doctor can open an existing visit and save a prescription that remains linked to that visit."
+      scenario_type: "Workflow"
+      priority: "High"
+
+  - example_id: SCN_WF_003
+    source_requirement:
+      requirement_title: "Dashboard metric refresh on save"
+      requirement_description: "The Dashboard shall update visit and prescription summary counts after a visit or prescription is saved without requiring a full page reload."
+    expected_output:
+      scenario_name: "Dashboard updates after visit and prescription save"
+      scenario_description: "Verify that dashboard visit and prescription counts increase after saving a new visit and prescription without reloading the page."
+      scenario_type: "Workflow"
+      priority: "Medium"

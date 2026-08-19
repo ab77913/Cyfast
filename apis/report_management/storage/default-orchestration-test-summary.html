@@ -1,0 +1,324 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>ORCHESTRATION SUMMARY REPORT</title>
+    <style>
+      /* CSS styles for the test execution log */
+      body {
+        font-family: ui-monospace;
+        line-height: 1.5;
+        font-size: 12px;
+      }
+
+      .container {
+        background-color: #fff;
+        opacity: 0.9;
+      }
+      h1 {
+        text-align: center;
+      }
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-bottom: 20px;
+      }
+      th,
+      td {
+        padding: 8px;
+        border: 1px solid #ddd;
+        text-align: left;
+      }
+      th {
+        background-color: #19a7b1;
+      }
+      .pass {
+        background-color: #dff0d8;
+      }
+      .fail {
+        background-color: #f2dede;
+      }
+      .skip {
+        background-color: #fcf8e3;
+      }
+      .h1-tag {
+        text-align: center;
+        margin-bottom: 0;
+        font-size: 16pt;
+      }
+      .h1-tag-pname {
+        text-align: center;
+        /* font-style: italic; */
+        font-family: serif;
+        margin-bottom: -18px;
+        font-size: 18pt;
+      }
+      .h2-tag-pname {
+        text-align: center;
+        font-style: italic;
+        margin-top: 0;
+        font-size: 14pt;
+        margin-bottom: 0;
+      }
+      .div-border {
+        border: none;
+
+        padding: 0cm 0cm 1pt 0cm;
+      }
+      .line-height-new {
+        height: 230px;
+        text-align: center;
+      }
+      .line-height-new2 {
+        height: 160px;
+        text-align: center;
+      }
+      .span-right {
+        float: right;
+      }
+      .margin-p-tag {
+        margin-top: 0;
+        margin-bottom: 0;
+        font-size: 12px;
+      }
+
+      .title-page {
+        page-break-after: always;
+      }
+      .content-page {
+        page-break-before: always;
+        height: 100%;
+      }
+
+      /* Page breaks */
+      @media print {
+        .title-page {
+          page-break-after: always;
+        }
+        .content-page {
+          page-break-before: always;
+          height: 100%;
+        }
+      }
+      .box-side {
+        border-left: 30px solid #19a7b1;
+        margin: 0px;
+      }
+      .td-back-color {
+        background: #19a7b1;
+      }
+    </style>
+  </head>
+  <body class="box-side">
+    <div class="container">
+      <div class="line-height-new2"></div>
+      <div class="line-height-new">
+        <img src="Cyient_Logo_mi.jpg" style="width: 30%" />
+        <br />
+        <img src="CyFastLogo.png" style="width: 30%" />
+      </div>
+      <div class="title-page">
+        <div class="div-border">
+          <h1 class="h1-tag-pname"><b>{{orchestration.name}}</b></h1>
+          <h1 class="h1-tag">ORCHESTRATION SUMMARY REPORT</h1>
+        </div>
+        <div>
+          <p class="h2-tag-pname">Version 1.0</p>
+          <p class="h2-tag-pname">{{generated_date}}</p>
+        </div>
+      </div>
+
+      <div class="content-page" style="margin-left: 10px; margin-right: 10px">
+        <p class="margin-p-tag">
+          {{orchestration.name}} <span class="span-right">CONSOLE LOG</span>
+        </p>
+        <p class="margin-p-tag">DOCUMENT NUMBER</p>
+        <h1><b>Orchestration Summary Report Details</b></h1>
+        <div id="report_content">
+          <h1>General Information</h1>
+          <table>
+            <tr>
+              <td class="td-back-color"><b>ORCHESTRATION NAME</b></td>
+              <td colspan="3">Orchestration Name</td>
+            </tr>
+            <tr>
+              <td class="td-back-color"><b>ORCHESTRATION CODE</b></td>
+              <td>Code</td>
+              <td class="td-back-color"><b>ORCHESTRATION VERSION</b></td>
+              <td>Orchestration version</td>
+            </tr>
+            <tr>
+              <td class="td-back-color"><b>AUTHOR NAME</b></td>
+              <td colspan="3">
+                Orchestration author name & signature Date & Time
+              </td>
+            </tr>
+            <tr>
+              <td class="td-back-color"><b>TESTER’S NAME</b></td>
+              <td colspan="3">Test Executor name & signature Date & Time</td>
+            </tr>
+            <tr>
+              <td class="td-back-color"><b>REVIEWER NAME</b></td>
+              <td colspan="3">
+                Reviewer name & signature for all reviewers (Could be multiple)
+                Date & Time
+              </td>
+            </tr>
+            <tr>
+              <td class="td-back-color"><b>APPROVER NAME</b></td>
+              <td colspan="3">
+                Approver name & signature for all reviewers (Could be multiple)
+                Date & Time
+              </td>
+            </tr>
+          </table>
+          <h1>Execution Details</h1>
+          <table>
+            <tr>
+              <td class="td-back-color"><b>ORCHESTRATION STATUS</b></td>
+              <td colspan="3">Orchestration Execution status</td>
+            </tr>
+            <tr>
+              <td class="td-back-color">
+                <b>ORCHESTRATION EXECUTION START DATE</b>
+              </td>
+              <td>Execution Start Date (MMM DD,YYYY) with time</td>
+              <td class="td-back-color">
+                <b>ORCHESTRATION EXECUTION END DATE</b>
+              </td>
+              <td>Execution End Date (MMM DD,YYYY) with time</td>
+            </tr>
+            <tr>
+              <td class="td-back-color">
+                <b>ORCHESTRATION EXECUTION DURATION</b>
+              </td>
+              <td>Orchestration Execution Duration (total)</td>
+              <td class="td-back-color"><b>BUILD NUMBER</b></td>
+              <td>Build number used for Orchestration Execution</td>
+            </tr>
+            <tr>
+              <td class="td-back-color"><b>RELEASE NUMBER</b></td>
+              <td colspan="3">
+                Release number used for Orchestration Execution
+              </td>
+            </tr>
+            <tr>
+              <th colspan="4" class="Text-Center td-back-color">
+                <b>TRIGGER CRITERIA</b>
+              </th>
+            </tr>
+            <tr>
+              <td colspan="2" class="Text-Center">
+                <input type="checkbox" id="Sequentia" name="Sequentia" />
+                <label for="Sequentia"> Sequentia</label>
+              </td>
+              <td colspan="2" class="Text-Center">
+                <input type="checkbox" id="Parallel" name="Parallel" />
+                <label for="Parallel"> Parallel</label>
+              </td>
+            </tr>
+            <tr>
+              <th colspan="4" class="Text-Center td-back-color">
+                <b>TYPE OF TESTING</b>
+              </th>
+            </tr>
+            <tr>
+              <td class="Text-Center">
+                <input type="checkbox" id="Functional" name="Functional" />
+                <label for="Functional"> Functional </label>
+              </td>
+              <td class="Text-Center">
+                <input type="checkbox" id="Usability" name="Usability" />
+                <label for="Usability"> Usability </label>
+              </td>
+              <td class="Text-Center">
+                <input type="checkbox" id="Interface" name="Interface" />
+                <label for="Interface"> Interface </label>
+              </td>
+              <td class="Text-Center">
+                <input type="checkbox" id="Database" name="Database" />
+                <label for="Database"> Database </label>
+              </td>
+            </tr>
+
+            <tr>
+              <td class="Text-Center">
+                <input
+                  type="checkbox"
+                  id="Compatibility"
+                  name="Compatibility"
+                />
+                <label for="Compatibility"> Compatibility </label>
+              </td>
+              <td class="Text-Center">
+                <input type="checkbox" id="Performance" name="Performance" />
+                <label for="Performance"> Performance </label>
+              </td>
+              <td class="Text-Center">
+                <input type="checkbox" id="Security" name="Security" />
+                <label for="Security"> Security </label>
+              </td>
+              <td class="Text-Center">
+                <input type="checkbox" id="Cloud" name="Cloud" />
+                <label for="Cloud"> Cloud </label>
+              </td>
+            </tr>
+
+            <tr>
+              <td class="Text-Center">
+                <input type="checkbox" id="Localization" name="Localization" />
+                <label for="Localization"> Localization </label>
+              </td>
+            </tr>
+          </table>
+
+          <h1><b>"Project Type E.g.: WEB APPLICATION ORCHESTRATION "</b></h1>
+          <h1>Orchestration Parameter Settings</h1>
+
+          <p>
+            List all orchestration configuration parameters with Parameter Names
+            and their corresponding selected/set values
+          </p>
+          <h1>Test Environment Coverage</h1>
+          <p>Execution Test Environment Parameters with values</p>
+
+          <h1>Acceptance Criteria</h1>
+          <p>Acceptance Criteria to be defined</p>
+          <h1>Test Case Execution Details</h1>
+          <table>
+            <tr>
+              <th>TEST CASE ID</th>
+              <th>TEST CASE NAME</th>
+              <th>EXECUTION START TIME</th>
+              <th>EXECUTION END TIME</th>
+              <th>EXECUTION STATUS</th>
+              <th>REQUIREMENTS COVERED</th>
+              <th>DEFECT ID</th>
+            </tr>
+            <tr>
+              <td></td>
+              <td></td>
+              <td></td>
+              <td></td>
+              <td></td>
+              <td></td>
+              <td></td>
+            </tr>
+            <tr>
+              <td></td>
+              <td></td>
+              <td></td>
+              <td></td>
+              <td></td>
+              <td></td>
+              <td></td>
+            </tr>
+          </table>
+          <p>
+            <b>CONCLUSION:</b> TOTAL Test Cases Count TESTS (x TESTS PASSED/y
+            TESTS FAILED/z TESTS ERROR/w TESTS NOT EXECUTED)
+          </p>
+        </div>
+      </div>
+    </div>
+  </body>
+</html>

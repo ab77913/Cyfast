@@ -1,0 +1,25 @@
+{
+  "rabbitmq": {
+    "local": {
+      "username": "guest",
+      "password": "guest",
+      "host": "localhost",
+      "port": "5672"
+    },
+    "staging": {
+      "username": "guest",
+      "password": "guest",
+      "host": "host.docker.internal",
+      "port": "5672"
+    },
+    "production": {
+      "username": "guest",
+      "password": "guest",
+      "host": "20.204.6.69",
+      "port": "5672"
+    }
+  },
+  "azure_messaging": {
+    "local": {}
+  }
+}

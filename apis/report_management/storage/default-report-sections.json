@@ -1,0 +1,112 @@
+{
+  "TEST_SUMMARY": [
+    {
+      "source": "USER",
+      "name": "Overview",
+      "details": "<h2>Overview</h2>ABCD transport system is a web based Bus ticket booking application. Tickets for various buses can be booked using the online facilities. Real time passenger information is received from a Central repository system, which will be referred before booking is confirmed. There are several modules like Registration, Booking, Payment and Reports which are integrated to fulfill the purpose.",
+      "sequence": 1
+    },
+    {
+      "source": "USER",
+      "name": "References",
+      "details": "<h2>References</h2><p>https://www.cambridge.org/core/books/abs/testing-it/test-summary-report-template/EE7D4E42A47750DCEB17FAC30A0313AE</p>",
+      "sequence": 2
+    },
+    {
+      "source": "USER",
+      "name": "Scope",
+      "details": "<h2>Scope</h2><p>a) In Scope Functional Testing for the following modules are in Scope of Testing</p> <p> Registration  Booking  Payment</p> <p>b) Out of Scope Performance Testing was not  done for this application.</p> <p>c) Items not tested Verification of connectivity with the third party system &lsquo;Central repository system&rsquo; was not tested, as the connectivity could not be established due to some technical limitations. This can be verified during UAT (User Acceptance Testing) where the connectivity is available or can be established</p>",
+      "sequence": 3
+    },
+    {
+      "source": "SYSTEM",
+      "name": "General Information",
+      "details": "<h2>GENERAL INFORMATION</h2><table><tbody><tr><td><strong>PROJECT NAME</strong></td><td colspan=\"3\">{{project.name}}</td></tr><tr><td><strong>PROJECT CODE</strong></td><td colspan=\"3\">{{project.code}}</td></tr><tr><td><strong>REVIEWER NAME</strong></td><td colspan=\"3\">Reviewer name &amp; signature for all reviewers (Could be multiple) Date &amp; Time</td></tr><tr><td><strong>APPROVER NAME</strong></td><td colspan=\"3\">Approver name &amp; signature for all reviewers (Could be multiple) Date &amp; Time</td></tr></tbody></table>",
+      "sequence": 4
+    },
+    {
+      "source": "SYSTEM",
+      "name": "Project Parameter Settings",
+      "details": "<h2>Project Parameter Settings</h2><p>APPLICATION NAME: {{project_configurations.app_name}}</p><p>ON ERROR CONTINUE?:&nbsp;{{project_configurations.continue_on_error}}</p><p>PHASE:&nbsp;{{project_configurations.phase}}</p><p>CHANNEL TYPE:&nbsp;{{project_configurations.channel_type}}</p><p>PROTOCOL:&nbsp;{{project_configurations.protocol}}</p><p>ADDRESS:&nbsp;{{project_configurations.site_address}}</p>",
+      "sequence": 5
+    },
+    {
+      "source": "SYSTEM",
+      "name": "Risk Requirement Coverage",
+      "details": "<h2>RISK REQUIREMENT COVERAGE</h2><p><strong>RISK REQUIREMENT COVERAGE:</strong> {{risk_coverage.percentage}} %.</p><table><tbody><tr><th>PASSED RISK REQUIREMENTS (%)</th><th>FAILED RISK REQUIREMENTS(%)</th><th>NOT EXECUTED RISK REQUIREMENTS (%)</th></tr><tr><td>{{risk_coverage.passed}}</td><td>{{risk_coverage.failed}}</td><td>{{risk_coverage.not_executed}}</td></tr></tbody></table>",
+      "sequence": 6
+    },
+    {
+      "source": "SYSTEM",
+      "name": "Requirement Coverage",
+      "details": "<h2>REQUIREMENT COVERAGE</h2><p><strong>REQUIREMENT COVERAGE:</strong>{{requirement_coverage.percentage}} %.</p><table><tbody><tr><th>PASSED REQUIREMENTS (%)</th><th>FAILED REQUIREMENTS(%)</th><th>NOT EXECUTED REQUIREMENTS (%)</th></tr><tr><td>{{requirement_coverage.passed}}</td><td>{{requirement_coverage.failed}}</td><td>{{requirement_coverage.not_executed}}</td></tr></tbody></table>",
+      "sequence": 7
+    },
+    {
+      "source": "SYSTEM",
+      "name": "Execution Summary",
+      "details": "<h2>EXECUTION SUMMARY</h2><table><tbody><tr><th>ORCHESTRATION NAME</th><th>EXECUTION INSTANCE ID</th><th>TEST CASE NAME</th><th>TAG</th><th>STATUS</th><th>START DATE &amp; TIME</th><th>END DATE &amp; TIME</th><th>RELEASE NUMBER</th><th>BUILD NUMBER</th><th>TEST ENVIRONMENT INFO</th></tr>{{#execution_summary}}<tr><td>{{execution_summary.orchestration_name}}</td><td>{{execution_summary.execution_instance}}</td><td>{{execution_summary.test_case_name}}</td><td>{{execution_summary.tags}}</td><td>{{execution_summary.status}}</td><td>{{execution_summary.test_start_time}}</td><td>{{execution_summary.test_end_time}}</td><td>{{execution_summary.release_number}}</td><td>{{execution_summary.build_number}}</td><td>{{execution_summary.test_environment}}</td></tr>{{/execution_summary}}</tbody></table>",
+      "sequence": 8
+    }
+  ],
+  "CONSOLE_LOG": [
+    {
+      "source": "SYSTEM",
+      "name": "General Information",
+      "details": "<h1>General Information</h1><table><tr><td class='td-back-color'><b>ORCHESTRATION NAME</b></td><td>{{orchestration.name}}</td></tr><tr><td class='td-back-color'><b>ORCHESTRATION CODE</b></td><td>{{orchestration.code}}</td></tr><tr><td class='td-back-color'><b>ORCHESTRATION VERSION</b></td><td>{{orchestration.version}}</td></tr><tr><td class='td-back-color'><b>EXECUTION INSTANCE ID</b></td><td>{{orchestration_execution.instance_id}}</td></tr></table>",
+      "sequence": 1
+    },
+    {
+      "source": "SYSTEM",
+      "name": "Console Log",
+      "details": "<h1>Console Log</h1><div style='background:#333; color:#eee; font-size:12px; padding:15px;'>{{console_log}}</div>",
+      "sequence": 2
+    }
+  ],
+  "ORCHESTRATION_EXECUTION_LOG": [
+    {
+      "source": "SYSTEM",
+      "name": "General Information",
+      "details": "<h1><b>General Information</b></h1><table><tr><td class='td-back-color'><b>ORCHESTRATION NAME</b></td><td colspan='3'>{{orchestration.name}}</td></tr><tr><td class='td-back-color'><b>ORCHESTRATION CODE</b></td><td>{{orchestration.code}}</td><td class='td-back-color'><b>ORCHESTRATION VERSION</b></td><td>{{orchestration.version}}</td></tr><tr><td class='td-back-color'><b>TEST SCENARIO SOURCE</b></td><td>File location for Test Scenario (Test Scenario Source)</td><td class='td-back-color'><b>ORCHESTRATION STATUS</b></td><td>{{orchestration_execution.status}}</td></tr><tr><td class='td-back-color'><b>ORCHESTRATION EXECUTION START DATE</b></td><td>{{orchestration_execution.start_time}}</td><td class='td-back-color'><b>ORCHESTRATION EXECUTION END DATE</b></td><td>{{orchestration_execution.end_time}}</td></tr><tr><td class='td-back-color'><b>OORCHESTRATION EXECUTION DURATION</b></td><td colspan='3'>{{orchestration_execution.elapsed_time}}</td></tr><tr><td class='td-back-color'><b>BUILD NUMBER</b></td><td>{{orchestration_execution.build_number}}</td><td class='td-back-color'><b>RELEASE NUMBER</b></td><td>{{orchestration_execution.release_number}}</td></tr></table>",
+      "sequence": 1
+    },
+    {
+      "source": "SYSTEM",
+      "name": "Test Execution Log",
+      "details": "<h1><b>Test Execution Log</b></h1>{{#test_execution}}<table><tr><td class='td-back-color'><b>TEST CASE NAME</b></td><td colspan='3'>{{testcase.name}}</td></tr><tr><td class='td-back-color'><b>TEST CASE ID</b></td><td>{{testcase.id}}</td><td class='td-back-color'><b>TEST CASE VERSION</b></td><td>{{testcase.version}}</td></tr><tr><td class='td-back-color'><b>TAGS</b></td><td>{{testcase.tags}}</td><td class='td-back-color'><b>TEST CASE EXECUTION START DATE</b></td><td>{{test_execution.start_time}}</td></tr><tr><td class='td-back-color'><b>TEST CASE EXECUTION END DATE</b></td><td>{{test_execution.end_time}}</td><td class='td-back-color'><b>TEST CASE EXECUTION DURATION</b></td><td>{{test_execution.elapsed_time}}</td></tr><tr><td class='td-back-color'><b>TEST CASE STATUS</b></td><td>{{test_execution.status}}</td><td class='td-back-color'><b>TEST STEP DETAILS</b></td><td>{{test_execution.test_steps}}</td></tr></table><p>Screenshots for the Failed steps (failed keywords)</p>{{/test_execution}}",
+      "sequence": 2
+    }
+  ],
+  "ORCHESTRATION_TEST_SUMMARY": [
+    {
+      "source": "SYSTEM",
+      "name": "General Information",
+      "details": "<h1>General Information</h1><table><tr><td class=\"td-back-color\"><b>ORCHESTRATION NAME</b></td><td colspan=\"3\">{{orchestration.name}}</td></tr><tr><td class=\"td-back-color\"><b>ORCHESTRATION CODE</b></td><td>{{orchestration.code}}</td><td class=\"td-back-color\"><b>ORCHESTRATION VERSION</b></td><td>{{orchestration.version}}</td></tr><tr><td class=\"td-back-color\"><b>AUTHOR NAME</b></td><td colspan=\"3\">Orchestration author name & signature Date & Time</td></tr><tr><td class=\"td-back-color\"><b>TESTER’S NAME</b></td><td colspan=\"3\">Test Executor name & signature Date & Time</td></tr><tr><td class=\"td-back-color\"><b>REVIEWER NAME</b></td><td colspan=\"3\">Reviewer name & signature for all reviewers (Could be multiple) Date & Time</td></tr><tr><td class=\"td-back-color\"><b>APPROVER NAME</b></td><td colspan=\"3\">Approver name & signature for all reviewers (Could be multiple) Date & Time</td></tr></table>",
+      "sequence": 1
+    },
+    {
+      "source": "SYSTEM",
+      "name": "Orchestraion Parameter Settings",
+      "details": "<h2>Orchestration Parameter Settings</h2><p>APP VERSION: {{orchestration_configurations.app_version}}</p><p>APP PATH:&nbsp;{{orchestration_configurations.app_path}}</p><p>HOST:&nbsp;{{orchestration_configurations.host}}</p><p>PORT:&nbsp;{{orchestration_configurations.port}}</p><p>CHANNEL TYPE:&nbsp;{{orchestration_configurations.channel_type}}</p><p>PROTOCOL:&nbsp;{{orchestration_configurations.protocol}}</p><p>ADDRESS:&nbsp;{{orchestration_configurations.site_address}}</p>",
+      "sequence": 2
+    },
+    {
+      "source": "SYSTEM",
+      "name": "Test Environment",
+      "details": "<h1>Test Environment Coverage</h1><p>Execution Test Environment Parameters with values</p>",
+      "sequence": 3
+    },
+    {
+      "source": "SYSTEM",
+      "name": "Execution Details",
+      "details": "<h1>Test Case Execution Details</h1><table><tr><th>TEST CASE ID</th><th>TEST CASE NAME</th><th>EXECUTION START TIME</th><th>EXECUTION END TIME</th><th>EXECUTION STATUS</th><th>REQUIREMENTS COVERED</th><th>DEFECT ID</th></tr>{{#test_execution}}<tr><td>{{testcase.id}}</td><td>{{testcase.name}}</td><td>{{test_execution.start_time}}</td><td>{{test_execution.end_time}}</td><td>{{test_execution.status}}</td><td>{{test_execution.requirements}}</td><td>{{test_execution.defect_id}}</td></tr>{{/test_execution}}</table>",
+      "sequence": 4
+    },
+    {
+      "source": "SYSTEM",
+      "name": "Conclusion",
+      "details": "<p><b>CONCLUSION:</b>TOTAL {{orchestration_execution_stats.total}} TESTS ({{orchestration_execution_stats.passed}} TESTS PASSED/ {{orchestration_execution_stats.failed}} TESTS FAILED/ {{orchestration_execution_stats.error}} TESTS ERROR/ {{orchestration_execution_stats.not_executed}} TESTS NOT EXECUTED)</p>",
+      "sequence": 5
+    }
+  ]
+}

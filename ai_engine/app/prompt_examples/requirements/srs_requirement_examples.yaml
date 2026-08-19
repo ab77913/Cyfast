@@ -1,0 +1,28 @@
+document_type: SRS
+domain: hospital_management
+task: requirement_generation
+usage: few_shot_guidance_only
+examples:
+  - example_id: SRS_REQ_001
+    source_excerpt: "When a doctor saves a prescription, the system shall store medicine name, dosage, frequency, duration, and prescribing doctor for the selected patient visit."
+    expected_output:
+      requirement_title: "Prescription record persistence"
+      requirement_description: "The system shall persist a prescription with medicine name, dosage, frequency, duration, prescribing doctor, and linked patient visit when a doctor saves a prescription."
+      rationale: "Stored prescription details are required for patient history review and follow-up care."
+      priority: "High"
+
+  - example_id: SRS_REQ_002
+    source_excerpt: "The Patient History view shall list past visits and prescriptions for the selected patient in reverse chronological order."
+    expected_output:
+      requirement_title: "Patient history chronological listing"
+      requirement_description: "The Patient History module shall display past visits and prescriptions for the selected patient ordered from most recent to oldest."
+      rationale: "Chronological history helps clinicians review recent care before making treatment decisions."
+      priority: "High"
+
+  - example_id: SRS_REQ_003
+    source_excerpt: "Dashboard metrics shall refresh when a new visit or prescription is saved without requiring a full page reload."
+    expected_output:
+      requirement_title: "Dashboard metric refresh on save"
+      requirement_description: "The Dashboard shall update visit and prescription summary counts after a visit or prescription is saved without requiring a full page reload."
+      rationale: "Timely dashboard updates keep operational summaries accurate during active hospital use."
+      priority: "Medium"

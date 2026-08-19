@@ -1,0 +1,23 @@
+project_id={project_id}{org_line}
+
+SCENARIO TYPES TO COVER (generate a balanced set across requirements; label each with `scenario_type` using these UPPER_SNAKE tokens): {scenario_types_label}
+{safety_block}
+
+ACTIVE REQUIREMENTS (JSON). Each item includes `requirement_id` you MUST copy onto every scenario you derive from it:
+{requirements_blob}{additional_block}
+
+Generation instructions:
+- Generate at least one scenario for every requirement listed above.
+- Use only the selected scenario types listed at the top of this message.
+- Do not output unsupported scenario types such as USABILITY unless it is explicitly selected.
+- Cover positive, negative, boundary, validation, workflow, and error-handling situations only when they are applicable to the linked requirement content.
+- For simple requirements, one scenario may be enough.
+- For complex requirements with multiple distinct obligations, generate multiple atomic scenarios.
+- Use "Application is open" as the default precondition when no explicit start state is given.
+- Do not assume login, permissions, authorization, RBAC, or admin access unless explicitly present in the linked requirement.
+- `test_data` must be a JSON object, not a prose string describing an object.
+
+Return JSON with top-level array `scenarios`. Each object MUST include:
+`requirement_id` (int), `requirement_version` (string or null), `scenario_type` (UPPER_SNAKE), `scenario_no` (string), `title`, `objective`, `priority` (low|medium|high), `automation_possibility_score` (0-100 int), `automation_rationale` (short string), `description`, `preconditions`, `test_steps` (array), `test_data`, `expected_results`, `postconditions`.
+Every scenario must be atomic, uniquely titled, and non-overlapping with others in this batch.
+Avoid wording-only duplicates that validate the same behavior under the same conditions.

@@ -1,0 +1,45 @@
+{
+  "elasticsearch": {
+    "local": {
+      "username": "elastic",
+      "password": "elastic",
+      "database": "elasticsearch",
+      "host": "localhost",
+      "port": "9200"
+    },
+    "staging": {
+      "username": "elastic",
+      "password": "elastic",
+      "database": "elasticsearch",
+      "host": "host.docker.internal",
+      "port": "9200"
+    },
+    "production": {
+      "username": "elastic",
+      "password": "elastic",
+      "database": "elasticsearch",
+      "host": "20.204.6.69",
+      "port": "9200"
+    }
+  },
+  "mongodb": {
+    "local": {
+      "username": "mongoadmin",
+      "password": "1secure*password1",
+      "database": "cyfastlogsdb",
+      "host": "127.0.0.1"
+    },
+    "staging": {
+      "username": "mongoadmin",
+      "password": "1secure*password1",
+      "database": "cyfastlogsdb",
+      "host": "host.docker.internal"
+    },
+    "production": {
+      "username": "mongoadmin",
+      "password": "1secure*password1",
+      "database": "cyfastlogsdb",
+      "host": "20.204.6.69"
+    }
+  }
+}

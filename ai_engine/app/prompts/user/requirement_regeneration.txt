@@ -1,0 +1,21 @@
+project_id={project_id}{org_line}
+
+Categories: {categories_label}
+
+SOURCE DOCUMENT EXCERPTS:
+{document_context}{additional_block}
+
+CURRENT DRAFT REQUIREMENTS (JSON):
+{prior_requirements_blob}
+
+USER FEEDBACK — revise the draft accordingly:
+{user_feedback}
+
+Return JSON with full replacement array `requirements` (same schema as generate). Merge or drop items per feedback; stay excerpt-grounded.
+
+Regeneration quality constraints:
+- Keep each requirement atomic and directly testable.
+- Keep wording concrete and measurable where the source permits.
+- Include acceptance-style verifiable conditions in existing fields when supported.
+- Avoid duplicates and wording-only variants.
+- Do not introduce obligations that are not supported by provided excerpts and feedback.

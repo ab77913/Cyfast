@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Test Execution Log</title>
+    <style>
+      /* CSS styles for the test execution log */
+      body {
+        font-family: ui-monospace;
+        line-height: 1.2;
+        font-size: 12px;
+      }
+      .container {
+        background-color: #fff;
+        opacity: 0.9;
+      }
+      h1 {
+        text-align: center;
+      }
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-bottom: 20px;
+      }
+      th,
+      td {
+        padding: 8px;
+        border: 1px solid #ddd;
+        text-align: left;
+      }
+      th {
+        background-color: #19a7b1;
+      }
+      .pass {
+        background-color: #dff0d8;
+      }
+      .fail {
+        background-color: #f2dede;
+      }
+      .skip {
+        background-color: #fcf8e3;
+      }
+      .h1-tag {
+        text-align: center;
+        margin-bottom: 0;
+        font-size: 16pt;
+      }
+      .h1-tag-pname {
+        text-align: center;
+        /* font-style: italic; */
+        font-family: serif;
+        margin-bottom: -18px;
+        font-size: 18pt;
+      }
+      .h2-tag-pname {
+        text-align: center;
+        font-style: italic;
+        margin-top: 0;
+        font-size: 14pt;
+        margin-bottom: 0;
+      }
+      .div-border {
+        border: none;
+        padding: 0cm 0cm 1pt 0cm;
+      }
+      .line-height-new {
+        height: 230px;
+        text-align: center;
+      }
+      .line-height-new2 {
+        height: 160px;
+        text-align: center;
+      }
+      .span-right {
+        float: right;
+      }
+      .margin-p-tag {
+        margin-top: 0;
+        margin-bottom: 0;
+        font-size: 12px;
+      }
+      .title-page {
+        page-break-after: always;
+      }
+      .content-page {
+        page-break-before: always;
+        height: 100%;
+      }
+
+      /* Page breaks */
+      @media print {
+        .title-page {
+          page-break-after: always;
+        }
+        .content-page {
+          page-break-before: always;
+          height: 100%;
+        }
+      }
+      .box-side {
+        border-left: 30px solid #19a7b1;
+        margin: 0px;
+      }
+      .td-back-color {
+        background: #19a7b1;
+      }
+    </style>
+  </head>
+
+  <body class="box-side">
+    <div class="container">
+      <div class="line-height-new2"></div>
+      <div class="line-height-new">
+        <img src="Cyient_Logo_mi.jpg" style="width: 30%" />
+        <br />
+        <img src="CyFastLogo.png" style="width: 30%" />
+      </div>
+      <div class="title-page">
+        <div class="div-border">
+          <h1 class="h1-tag-pname"><b>{{orchestration.name}}</b></h1>
+          <h1 class="h1-tag">Test Execution Log</h1>
+        </div>
+        <div>
+          <p class="h2-tag-pname">{{generated_date}}</p>
+        </div>
+      </div>
+
+      <div class="content-page" style="margin-left: 10px; margin-right: 10px">
+        <div id="report_content">
+          <h1><b>Orchestration Information</b></h1>
+          <table>
+            <tr>
+              <td class="td-back-color"><b>ORCHESTRATION NAME</b></td>
+              <td colspan="3">Orchestration Name</td>
+            </tr>
+            <tr>
+              <td class="td-back-color"><b>ORCHESTRATION CODE</b></td>
+              <td>Code</td>
+              <td class="td-back-color"><b>ORCHESTRATION VERSION</b></td>
+              <td>Orchestration version</td>
+            </tr>
+            <tr>
+              <td class="td-back-color"><b>TEST SCENARIO SOURCE</b></td>
+              <td>File location for Test Scenario (Test Scenario Source)</td>
+              <td class="td-back-color"><b>ORCHESTRATION STATUS</b></td>
+              <td>Orchestration Execution status</td>
+            </tr>
+            <tr>
+              <td class="td-back-color">
+                <b>ORCHESTRATION EXECUTION START DATE</b>
+              </td>
+              <td>Execution Start Date</td>
+              <td class="td-back-color">
+                <b>ORCHESTRATION EXECUTION END DATE</b>
+              </td>
+              <td>Execution End Date</td>
+            </tr>
+            <tr>
+              <td class="td-back-color">
+                <b>OORCHESTRATION EXECUTION DURATION</b>
+              </td>
+              <td colspan="3">Orchestration Execution Duration</td>
+            </tr>
+            <tr>
+              <td class="td-back-color"><b>BUILD NUMBER</b></td>
+              <td>Build number</td>
+              <td class="td-back-color"><b>RELEASE NUMBER</b></td>
+              <td>Release number</td>
+            </tr>
+          </table>
+          <h1><b>Test Execution Log</b></h1>
+          <table>
+            <tr>
+              <td class="td-back-color"><b>TEST CASE NAME</b></td>
+              <td colspan="3">Test Case Name for 1st Test Case</td>
+            </tr>
+            <tr>
+              <td class="td-back-color"><b>TEST CASE ID</b></td>
+              <td>Test Case ID</td>
+              <td class="td-back-color"><b>TEST CASE VERSION</b></td>
+              <td>Test Case (file) version</td>
+            </tr>
+            <tr>
+              <td class="td-back-color"><b>TAGS</b></td>
+              <td>
+                List of all tags and/or Requirement IDs and/or Risk IDs covered
+              </td>
+              <td class="td-back-color">
+                <b>TEST CASE EXECUTION START DATE</b>
+              </td>
+              <td>Execution Start Date (MMM DD,YYYY) with time</td>
+            </tr>
+            <tr>
+              <td class="td-back-color"><b>TEST CASE EXECUTION END DATE</b></td>
+              <td>Execution End Date (MMM DD,YYYY) with time</td>
+              <td class="td-back-color"><b>TEST CASE EXECUTION DURATION</b></td>
+              <td>Test Case Execution Duration</td>
+            </tr>
+            <tr>
+              <td class="td-back-color"><b>TEST CASE STATUS</b></td>
+              <td>Orchestration Execution status</td>
+              <td class="td-back-color"><b>TEST STEP DETAILS</b></td>
+              <td>All Test Step details like Keywords</td>
+            </tr>
+          </table>
+          <p>Screenshots for the Failed steps (failed keywords)</p>
+        </div>
+      </div>
+    </div>
+  </body>
+</html>

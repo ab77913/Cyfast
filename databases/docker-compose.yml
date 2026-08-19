@@ -1,0 +1,76 @@
+services:
+  # cyfastdb:
+  #   image: cyfastdb
+  #   build:
+  #     context: MSSQL/.
+  #   container_name: cyfastdb
+  #   hostname: localhost
+  #   environment:
+  #     - ACCEPT_EULA=Y
+  #     - SA_PASSWORD=1secure*password1
+  #   ports:
+  #     - 1433:1433
+  #   volumes:
+  #     - mssqldb:/var/opt/mssql
+  #   networks:
+  #     - cyfastnet
+
+  cyfastdb:
+    image: cyfastdb
+    build:
+      context: MYSQL/.
+    container_name: cyfastdb
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: cyfast3
+      MYSQL_USER: myuser
+      MYSQL_PASSWORD: mypassword
+    ports:
+      - 3306:3306
+    volumes:
+      - mysqldb:/var/lib/mysql
+      - ./MYSQL/Cyfast_3/3.0.0/01_schema.sql:/docker-entrypoint-initdb.d/01_schema.sql
+      - ./MYSQL/Cyfast_3/3.0.0/02_masterdata.sql:/docker-entrypoint-initdb.d/02_masterdata.sql
+      - ./MYSQL/Cyfast_3/3.0.0/03_stored_procs.sql:/docker-entrypoint-initdb.d/03_stored_procs.sql
+    networks:
+      - cyfastnet
+
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:8.8.1
+    container_name: elasticsearch
+    environment:
+      - bootstrap.memory_lock=true
+      - discovery.type=single-node
+      - "ES_JAVA_OPTS=-Xms2g -Xmx2g"
+      - ELASTIC_PASSWORD=elastic
+      - xpack.security.enabled=false
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+    ports:
+      - 9200:9200
+    volumes:
+      - esdata:/usr/share/elasticsearch/data
+    networks:
+      - cyfastnet
+
+  # redis:
+  #   image: redis:latest
+  #   container_name: redis
+  #   ports:
+  #     - 6379:6379
+  #   volumes:
+  #     - ./Redis/config/redis.conf:/redis.conf
+  #   command: ["redis-server", "/redis.conf"]
+  #   networks:
+  #     - cyfastnet
+
+networks:
+  cyfastnet:
+    name: cyfastnet
+    driver: bridge
+    external: true
+volumes:
+  mysqldb:
+  esdata:

@@ -1,0 +1,43 @@
+domain: hospital_management
+task: test_scenario_generation
+usage: few_shot_guidance_only
+examples:
+  - example_id: SCN_NEG_001
+    source_requirement:
+      requirement_title: "Required phone number validation"
+      requirement_description: "When phone number is blank on Patient Registration save, the system shall display the message 'Phone number is required' and shall not save the patient record."
+    expected_output:
+      scenario_name: "Reject patient registration without phone number"
+      scenario_description: "Verify that saving a patient record with a blank phone number shows a validation message and does not create the record."
+      scenario_type: "Negative"
+      priority: "High"
+
+  - example_id: SCN_BND_001
+    source_requirement:
+      requirement_title: "Prescription duration range validation"
+      requirement_description: "The Prescription Management module shall accept prescription duration only as a positive whole number from 1 to 90 days."
+    expected_output:
+      scenario_name: "Reject prescription duration above maximum limit"
+      scenario_description: "Verify that entering a prescription duration of 91 days is rejected with a validation message."
+      scenario_type: "Boundary"
+      priority: "Medium"
+
+  - example_id: SCN_VAL_001
+    source_requirement:
+      requirement_title: "Visit date lower bound validation"
+      requirement_description: "The Visit Management module shall reject a visit date that is earlier than the selected patient's registration date."
+    expected_output:
+      scenario_name: "Reject visit date before patient registration date"
+      scenario_description: "Verify that the system prevents saving a visit dated before the selected patient's registration date."
+      scenario_type: "Validation"
+      priority: "High"
+
+  - example_id: SCN_NEG_002
+    source_requirement:
+      requirement_title: "Empty patient history message"
+      requirement_description: "When the selected patient has no visits or prescriptions, the Patient History module shall display the message 'No records found'."
+    expected_output:
+      scenario_name: "Display empty state for patient with no history"
+      scenario_description: "Verify that Patient History shows 'No records found' when the selected patient has no visits or prescriptions."
+      scenario_type: "Negative"
+      priority: "Low"

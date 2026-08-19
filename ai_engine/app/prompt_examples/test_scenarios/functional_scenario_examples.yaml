@@ -1,0 +1,33 @@
+domain: hospital_management
+task: test_scenario_generation
+usage: few_shot_guidance_only
+examples:
+  - example_id: SCN_FUNC_001
+    source_requirement:
+      requirement_title: "Mandatory patient registration fields"
+      requirement_description: "The Patient Registration screen shall capture patient name, age, gender, phone number, and address, and shall require name, age, gender, and phone number before saving."
+    expected_output:
+      scenario_name: "Register patient with valid mandatory details"
+      scenario_description: "Verify that hospital staff can register a new patient when all mandatory demographic and contact fields contain valid values."
+      scenario_type: "Positive"
+      priority: "High"
+
+  - example_id: SCN_FUNC_002
+    source_requirement:
+      requirement_title: "Visit record creation"
+      requirement_description: "The Visit Management module shall allow staff to create a visit by selecting a registered patient, assigned doctor, visit date, and visit reason."
+    expected_output:
+      scenario_name: "Create visit for registered patient"
+      scenario_description: "Verify that staff can create a visit by selecting a registered patient, doctor, valid visit date, and visit reason."
+      scenario_type: "Positive"
+      priority: "High"
+
+  - example_id: SCN_FUNC_003
+    source_requirement:
+      requirement_title: "Staff search and department filter"
+      requirement_description: "The Staff Management module shall allow users to search staff by name and filter the list by department."
+    expected_output:
+      scenario_name: "Search staff by name and filter by department"
+      scenario_description: "Verify that staff search returns matching names and department filtering narrows the staff list correctly."
+      scenario_type: "Positive"
+      priority: "Medium"

@@ -1,0 +1,20 @@
+{
+  "local": {
+    "protocol": "http",
+    "host": "localhost",
+    "port": "8087",
+    "logger_api_url": "http://localhost:8098"
+  },
+  "staging": {
+    "protocol": "http",
+    "host": "host.docker.internal",
+    "port": "8087",
+    "logger_api_url": "http://host.docker.internal:8098"
+  },
+  "production": {
+    "protocol": "https",
+    "host": "cyfast.platformcyient.com",
+    "port": "8087",
+    "logger_api_url": "//cyfast.platformcyient.com/logger"
+  }
+}

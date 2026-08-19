@@ -1,0 +1,17 @@
+{
+  "local": {
+    "protocol": "http",
+    "host": "localhost",
+    "port": "8090"
+  },
+  "staging": {
+    "protocol": "http",
+    "host": "host.docker.internal",
+    "port": "8090"
+  },
+  "production": {
+    "protocol": "https",
+    "host": "cyfast.platformcyient.com",
+    "port": "8090"
+  }
+}

@@ -1,0 +1,9 @@
+Validate the following AI-generated test scenario draft.
+
+DRAFT / CONTEXT PAYLOAD:
+{draft_blob}
+
+Use the validation rules and output schema from the system prompt.
+Judge the scenario against the linked requirement/context when present.
+Do not generate new scenarios.
+Return valid JSON only.

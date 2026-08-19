@@ -1,0 +1,1 @@
+CALL usp_get_project_backward_traceability(?)

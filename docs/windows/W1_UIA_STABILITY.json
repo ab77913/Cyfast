@@ -1,0 +1,79 @@
+﻿{
+    "generatedAtUtc":  "2026-08-13T18:50:21.4443689+00:00",
+    "requestedIterations":  10,
+    "completedIterations":  10,
+    "passed":  true,
+    "durationSeconds":  196.823,
+    "runs":  [
+                 {
+                     "iteration":  1,
+                     "startedAtUtc":  "2026-08-13T18:47:24.4224582+00:00",
+                     "durationSeconds":  19.786,
+                     "exitCode":  0,
+                     "passed":  true
+                 },
+                 {
+                     "iteration":  2,
+                     "startedAtUtc":  "2026-08-13T18:47:42.3237554+00:00",
+                     "durationSeconds":  17.839,
+                     "exitCode":  0,
+                     "passed":  true
+                 },
+                 {
+                     "iteration":  3,
+                     "startedAtUtc":  "2026-08-13T18:48:00.7600027+00:00",
+                     "durationSeconds":  18.388,
+                     "exitCode":  0,
+                     "passed":  true
+                 },
+                 {
+                     "iteration":  4,
+                     "startedAtUtc":  "2026-08-13T18:48:20.5041396+00:00",
+                     "durationSeconds":  19.726,
+                     "exitCode":  0,
+                     "passed":  true
+                 },
+                 {
+                     "iteration":  5,
+                     "startedAtUtc":  "2026-08-13T18:48:39.9126851+00:00",
+                     "durationSeconds":  19.385,
+                     "exitCode":  0,
+                     "passed":  true
+                 },
+                 {
+                     "iteration":  6,
+                     "startedAtUtc":  "2026-08-13T18:49:00.2415739+00:00",
+                     "durationSeconds":  20.303,
+                     "exitCode":  0,
+                     "passed":  true
+                 },
+                 {
+                     "iteration":  7,
+                     "startedAtUtc":  "2026-08-13T18:49:18.1913604+00:00",
+                     "durationSeconds":  17.939,
+                     "exitCode":  0,
+                     "passed":  true
+                 },
+                 {
+                     "iteration":  8,
+                     "startedAtUtc":  "2026-08-13T18:49:35.4554722+00:00",
+                     "durationSeconds":  17.256,
+                     "exitCode":  0,
+                     "passed":  true
+                 },
+                 {
+                     "iteration":  9,
+                     "startedAtUtc":  "2026-08-13T18:50:00.9172886+00:00",
+                     "durationSeconds":  25.409,
+                     "exitCode":  0,
+                     "passed":  true
+                 },
+                 {
+                     "iteration":  10,
+                     "startedAtUtc":  "2026-08-13T18:50:21.4433729+00:00",
+                     "durationSeconds":  20.512,
+                     "exitCode":  0,
+                     "passed":  true
+                 }
+             ]
+}

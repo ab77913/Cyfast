@@ -1,0 +1,65 @@
+domain: hospital_management
+task: test_case_generation
+usage: few_shot_guidance_only
+examples:
+  - example_id: TC_API_001
+    source_scenario:
+      scenario_name: "Add prescription after visit creation"
+      scenario_description: "Verify that a doctor can open an existing visit and save a prescription that remains linked to that visit."
+    expected_output:
+      test_case_name: "Verify prescription save API links prescription to visit"
+      test_case_description: "Verify that submitting a valid prescription payload creates a prescription linked to the selected visit."
+      test_type: "POSITIVE"
+      priority: "High"
+      preconditions:
+        - "A registered patient and an existing visit record are available."
+        - "Prescription save endpoint is reachable."
+      test_steps:
+        - step_no: 1
+          action: "Send a POST request to save a prescription for the existing visit with valid medicine details."
+          expected: "API returns a success response with a prescription identifier."
+        - step_no: 2
+          action: "Retrieve prescriptions for the same visit."
+          expected: "Saved prescription details match the submitted payload."
+      test_data:
+        visit_id: 1001
+        medicine_name: "Amoxicillin"
+        dosage: "500 mg"
+        frequency: "Twice daily"
+        duration_days: 7
+        prescribing_doctor: "Dr. Meera Iyer"
+      expected_result: "The prescription is persisted and returned with the correct visit linkage."
+      tags:
+        - "prescription-management"
+        - "api"
+        - "positive"
+      automation_percentage: 95
+
+  - example_id: TC_API_002
+    source_scenario:
+      scenario_name: "Search staff by name and filter by department"
+      scenario_description: "Verify that staff search returns matching names and department filtering narrows the staff list correctly."
+    expected_output:
+      test_case_name: "Verify staff search API with department filter"
+      test_case_description: "Verify that the staff search API returns only staff matching the name query within the selected department."
+      test_type: "POSITIVE"
+      priority: "Medium"
+      preconditions:
+        - "Staff records exist in multiple departments."
+        - "Staff search endpoint is reachable."
+      test_steps:
+        - step_no: 1
+          action: "Send a GET request to search staff by partial name with department filter set to General Medicine."
+          expected: "API returns HTTP 200 with a result list."
+        - step_no: 2
+          action: "Review returned staff records."
+          expected: "Each record matches the search term and belongs to General Medicine."
+      test_data:
+        search_term: "Meera"
+        department: "General Medicine"
+      expected_result: "Only matching staff from the selected department are returned."
+      tags:
+        - "staff-management"
+        - "api"
+        - "search"
+      automation_percentage: 90

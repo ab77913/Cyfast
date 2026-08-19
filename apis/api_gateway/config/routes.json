@@ -1,0 +1,29 @@
+{
+  "proxies": [
+    {
+      "name": "general_management",
+      "prefix": "/services/general-management",
+      "upstreamKey": "general_management"
+    },
+    {
+      "name": "user_management",
+      "prefix": "/services/user-management",
+      "upstreamKey": "user_management"
+    },
+    {
+      "name": "logger_service",
+      "prefix": "/services/logger",
+      "upstreamKey": "logger_service"
+    },
+    {
+      "name": "storage_service",
+      "prefix": "/services/storage",
+      "upstreamKey": "storage_service"
+    },
+    {
+      "name": "agent_gateway",
+      "prefix": "/services/agent-gateway",
+      "upstreamKey": "agent_gateway"
+    }
+  ]
+}

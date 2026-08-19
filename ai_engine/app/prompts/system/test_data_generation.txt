@@ -1,0 +1,2 @@
+You generate representative test data. Respond with JSON only.
+Include `test_data` array of objects with label, description, and payload (object or string).

@@ -1,0 +1,157 @@
+﻿{
+    "branch":  "feature/windows-connect-w1",
+    "baseCommit":  "6be343e",
+    "commit":  "eb4996141a613dc3b8a3b9b518438eca4f614a48",
+    "generatedAt":  "2026-08-13T19:33:00.2214300Z",
+    "runDir":  "C:\\Users\\ab77913\\CyFast2\\scripts\\windows\\.w1-run\\final-readiness-20260813T193051Z",
+    "mandatoryChecks":  {
+                            "blocked":  1,
+                            "failed":  0,
+                            "total":  6,
+                            "passed":  5
+                        },
+    "checks":  {
+                   "wssMtls":  {
+                                   "id":  "wss",
+                                   "name":  "WSS/mTLS E2E 3/3",
+                                   "mandatory":  true,
+                                   "status":  "PASS",
+                                   "exitCode":  0,
+                                   "detail":  "",
+                                   "durationMs":  34380,
+                                   "log":  "C:\\Users\\ab77913\\CyFast2\\scripts\\windows\\.w1-run\\final-readiness-20260813T193051Z\\wss.log"
+                               },
+                   "agentGatewayTests":  {
+                                             "id":  "ag-unit",
+                                             "name":  "Agent Gateway tests",
+                                             "mandatory":  true,
+                                             "status":  "PASS",
+                                             "exitCode":  0,
+                                             "detail":  "",
+                                             "durationMs":  3230,
+                                             "log":  "C:\\Users\\ab77913\\CyFast2\\scripts\\windows\\.w1-run\\final-readiness-20260813T193051Z\\ag-unit.log"
+                                         },
+                   "sessionStateVm":  {
+                                          "id":  "session-vm",
+                                          "name":  "Dedicated VM session-state E2E",
+                                          "mandatory":  true,
+                                          "status":  "BLOCKED",
+                                          "exitCode":  1,
+                                          "detail":  "BLOCKED: dedicated VM session-state E2E is not configured",
+                                          "durationMs":  1381,
+                                          "log":  "C:\\Users\\ab77913\\CyFast2\\scripts\\windows\\.w1-run\\final-readiness-20260813T193051Z\\session-vm.log"
+                                      },
+                   "windowsUnitTests":  {
+                                            "id":  "gm-unit",
+                                            "name":  "General Management Windows tests",
+                                            "mandatory":  true,
+                                            "status":  "PASS",
+                                            "exitCode":  0,
+                                            "detail":  "",
+                                            "durationMs":  15629,
+                                            "log":  "C:\\Users\\ab77913\\CyFast2\\scripts\\windows\\.w1-run\\final-readiness-20260813T193051Z\\gm-unit.log"
+                                        },
+                   "existingPipelineRegression":  {
+                                                      "id":  "pipeline",
+                                                      "name":  "Existing CyFAST pipeline regression 3/3",
+                                                      "mandatory":  true,
+                                                      "status":  "PASS",
+                                                      "exitCode":  0,
+                                                      "detail":  "",
+                                                      "durationMs":  22220,
+                                                      "log":  "C:\\Users\\ab77913\\CyFast2\\scripts\\windows\\.w1-run\\final-readiness-20260813T193051Z\\pipeline.log"
+                                                  },
+                   "changedFilesQuality":  {
+                                               "id":  "quality",
+                                               "name":  "Changed-files quality gate",
+                                               "mandatory":  true,
+                                               "status":  "PASS",
+                                               "exitCode":  0,
+                                               "detail":  "",
+                                               "durationMs":  50982,
+                                               "log":  "C:\\Users\\ab77913\\CyFast2\\scripts\\windows\\.w1-run\\final-readiness-20260813T193051Z\\quality.log"
+                                           }
+               },
+    "allChecks":  [
+                      {
+                          "id":  "clean-tree-start",
+                          "name":  "Repository cleanliness (advisory at start)",
+                          "mandatory":  false,
+                          "status":  "PASS",
+                          "exitCode":  0,
+                          "detail":  "",
+                          "durationMs":  662,
+                          "log":  "C:\\Users\\ab77913\\CyFast2\\scripts\\windows\\.w1-run\\final-readiness-20260813T193051Z\\clean-tree-start.log"
+                      },
+                      {
+                          "id":  "gm-unit",
+                          "name":  "General Management Windows tests",
+                          "mandatory":  true,
+                          "status":  "PASS",
+                          "exitCode":  0,
+                          "detail":  "",
+                          "durationMs":  15629,
+                          "log":  "C:\\Users\\ab77913\\CyFast2\\scripts\\windows\\.w1-run\\final-readiness-20260813T193051Z\\gm-unit.log"
+                      },
+                      {
+                          "id":  "ag-unit",
+                          "name":  "Agent Gateway tests",
+                          "mandatory":  true,
+                          "status":  "PASS",
+                          "exitCode":  0,
+                          "detail":  "",
+                          "durationMs":  3230,
+                          "log":  "C:\\Users\\ab77913\\CyFast2\\scripts\\windows\\.w1-run\\final-readiness-20260813T193051Z\\ag-unit.log"
+                      },
+                      {
+                          "id":  "quality",
+                          "name":  "Changed-files quality gate",
+                          "mandatory":  true,
+                          "status":  "PASS",
+                          "exitCode":  0,
+                          "detail":  "",
+                          "durationMs":  50982,
+                          "log":  "C:\\Users\\ab77913\\CyFast2\\scripts\\windows\\.w1-run\\final-readiness-20260813T193051Z\\quality.log"
+                      },
+                      {
+                          "id":  "pipeline",
+                          "name":  "Existing CyFAST pipeline regression 3/3",
+                          "mandatory":  true,
+                          "status":  "PASS",
+                          "exitCode":  0,
+                          "detail":  "",
+                          "durationMs":  22220,
+                          "log":  "C:\\Users\\ab77913\\CyFast2\\scripts\\windows\\.w1-run\\final-readiness-20260813T193051Z\\pipeline.log"
+                      },
+                      {
+                          "id":  "wss",
+                          "name":  "WSS/mTLS E2E 3/3",
+                          "mandatory":  true,
+                          "status":  "PASS",
+                          "exitCode":  0,
+                          "detail":  "",
+                          "durationMs":  34380,
+                          "log":  "C:\\Users\\ab77913\\CyFast2\\scripts\\windows\\.w1-run\\final-readiness-20260813T193051Z\\wss.log"
+                      },
+                      {
+                          "id":  "session-vm",
+                          "name":  "Dedicated VM session-state E2E",
+                          "mandatory":  true,
+                          "status":  "BLOCKED",
+                          "exitCode":  1,
+                          "detail":  "BLOCKED: dedicated VM session-state E2E is not configured",
+                          "durationMs":  1381,
+                          "log":  "C:\\Users\\ab77913\\CyFast2\\scripts\\windows\\.w1-run\\final-readiness-20260813T193051Z\\session-vm.log"
+                      }
+                  ],
+    "readyForW2":  false,
+    "productionGaReady":  false,
+    "legacyDebt":  [
+                       "Full-repo UI prettier/eslint failures predate W1 in many non-Windows files (see W1_LINT_BASELINE.json fullRepoLintExit)"
+                   ],
+    "remainingProductionGaItems":  [
+                                       "Dedicated locked/disconnected Windows VM lab proof",
+                                       "Production CA operations / certificate rotation runbooks",
+                                       "Deep document-to-execution golden path with seeded agents when available"
+                                   ]
+}

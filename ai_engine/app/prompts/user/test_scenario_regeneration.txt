@@ -1,0 +1,24 @@
+project_id={project_id}{org_line}
+
+SCENARIO TYPES CONTEXT: {scenario_types_label}
+{safety_block}
+
+ACTIVE REQUIREMENTS (JSON):
+{requirements_blob}{additional_block}CURRENT DRAFT SCENARIOS (JSON):
+{prior_scenarios_blob}
+
+USER FEEDBACK — revise or replace drafts accordingly:
+{user_feedback}
+
+Regeneration instructions:
+- Preserve requirement traceability on every scenario.
+- Use only the selected scenario types listed at the top of this message.
+- Do not output unsupported scenario types such as USABILITY unless it is explicitly selected.
+- Cover positive, negative, boundary, validation, workflow, and error-handling scenarios only when applicable to each linked requirement.
+- Keep one scenario for simple requirements when sufficient; split complex requirements into multiple atomic scenarios.
+- Use "Application is open" as the default precondition when no explicit start state is given.
+- Do not assume login, permissions, authorization, RBAC, or admin access unless explicitly present in the linked requirement.
+- `test_data` must be a JSON object, not a prose string describing an object.
+ - Avoid duplicates and wording-only variants that test the same condition.
+
+Return JSON with replacement array `scenarios` using the SAME schema as generate_from_requirements.

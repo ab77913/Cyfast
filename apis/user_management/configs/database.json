@@ -1,0 +1,56 @@
+{
+  "mssql": {
+    "local": {
+      "username": "sa",
+      "password": "1secure*password1",
+      "database": "cyfast3",
+      "host": "localhost",
+      "sql_encrypt": false,
+      "dialect": "mssql"
+    },
+    "staging": {
+      "username": "sa",
+      "password": "1secure*password1",
+      "database": "cyfast3",
+      "host": "cyfastdb",
+      "sql_encrypt": false,
+      "dialect": "mssql"
+    },
+    "production": {
+      "username": "cyfastadm",
+      "password": "Cyfast@22",
+      "database": "cyfastdbdemo",
+      "host": "cyfasttest.database.windows.net",
+      "dialect": "mssql"
+    }
+  },
+
+  "mysql": {
+    "local": {
+      "username": "root", 
+      "password": "HeliConia6*", 
+      "database": "cyfast3",
+      "host": "127.0.0.1",
+      "port": "3306",
+      "sql_encrypt": false,
+      "dialect": "mysql",
+      "logging": false
+    },
+    "staging": {
+      "username": "myuser", 
+      "password": "mypassword", 
+      "database": "cyfast3",
+      "host": "cyfastdb",
+      "port": "3306",
+      "sql_encrypt": false,
+      "dialect": "mysql"
+    },
+    "production": {
+      "username": "root", 
+      "password": "HeliConia6*", 
+      "database": "cyfastdbdemo",
+      "host": "127.0.0.1", 
+      "dialect": "mysql"   
+    }
+  }
+}

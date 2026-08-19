@@ -1,0 +1,28 @@
+﻿{
+    "generatedAt":  "2026-08-13T19:32:24.1139522Z",
+    "requiredRuns":  3,
+    "successfulRuns":  3,
+    "status":  "PASS",
+    "testOnlyLlm":  true,
+    "note":  "TEST-ONLY local OpenAI-compatible mock on 127.0.0.1:8199. Uses real CyFAST auth/API gateway/GM persistence probes. Full AI generation/approval/execution depth is environment-dependent when seed agents are absent.",
+    "runs":  [
+                 {
+                     "run":  1,
+                     "passed":  true,
+                     "projectId":  27,
+                     "detail":  "auth+project+docs/req/scenario/case/suite/orch probes+mock-llm+agents+windows coexistence"
+                 },
+                 {
+                     "run":  2,
+                     "passed":  true,
+                     "projectId":  28,
+                     "detail":  "auth+project+docs/req/scenario/case/suite/orch probes+mock-llm+agents+windows coexistence"
+                 },
+                 {
+                     "run":  3,
+                     "passed":  true,
+                     "projectId":  29,
+                     "detail":  "auth+project+docs/req/scenario/case/suite/orch probes+mock-llm+agents+windows coexistence"
+                 }
+             ]
+}

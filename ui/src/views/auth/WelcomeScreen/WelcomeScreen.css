@@ -1,0 +1,76 @@
+.welcome-container {
+  background-size: cover;
+  background-position: center;
+  height: 100vh;
+  position: relative;
+  color: white;
+  z-index: 1;
+  position: relative;
+  overflow: hidden;
+  background-color: #516DDD3D;
+}
+
+.welcome-container::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: transparent linear-gradient(133deg, #5E6F7F 0%, #3E4954 100%) no-repeat padding-box;
+  mix-blend-mode: soft-light;
+  opacity: 0.68;
+  z-index: 2;
+  pointer-events: none;
+}
+.welcome-container {
+  animation: fadeIn 1s ease-in-out;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.logo {
+  position: absolute;
+  top: 20px;
+  left: 30px;
+  height: 40px;
+  background: transparent;
+}
+
+.top-right-buttons {
+  position: absolute;
+  top: 20px;
+  right: 30px;
+}
+
+.signin-button {
+  border: 1px solid white;
+  color: white;
+}
+.bottom-text {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  text-align: center;
+  padding: 55px;
+
+  /* Glassmorphism UI */
+  background: transparent;
+  opacity: 0.8;
+  backdrop-filter: blur(30px);
+  -webkit-backdrop-filter: blur(30px);
+  border-top: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+
+.bottom-text h1 {
+  color: #6AC7FF;
+}
+
+.bottom-text h4 {
+  /* font-weight: 600; *
+  /* font-size: 1.25rem; */
+  font: normal normal normal 21px/28px Segoe UI;
+  color: #FFFFFF;
+}

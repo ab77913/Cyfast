@@ -1,0 +1,16 @@
+// -----------------------------------------------------------------------------
+// Bootstrap 5.x + theme variable overrides
+// -----------------------------------------------------------------------------
+// Bootstrap’s own SCSS still uses @import internally (see twbs/bootstrap). Until
+// upstream ships a module-based entry, we keep this as the single legacy import
+// chain for vendor CSS generation. App-layer files use @use (see style.scss).
+// -----------------------------------------------------------------------------
+
+@import 'bootstrap/scss/functions';
+@import 'bootstrap/scss/variables';
+@import '../settings/custom-variables';
+@import '../settings/theme-variables';
+
+@import '../react-module/react-module';
+
+@import 'bootstrap/scss/bootstrap';

@@ -1,0 +1,8 @@
+Validate the following AI-generated requirement draft.
+
+DRAFT / CONTEXT PAYLOAD:
+{draft_blob}
+
+Use the validation rules and output schema from the system prompt.
+Do not create unrelated new requirements.
+Return valid JSON only.

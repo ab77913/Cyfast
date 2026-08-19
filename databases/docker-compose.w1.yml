@@ -1,0 +1,52 @@
+# CyFAST Windows W1 local dependencies (MySQL + RabbitMQ).
+# Does not replace the main databases/docker-compose.yml permanently;
+# it corrects the missing Cyfast_3 mount path for W1 acceptance.
+name: cyfast-w1
+
+services:
+  cyfastdb-w1:
+    image: mysql:8.3
+    container_name: cyfast-w1-mysql
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: cyfast3
+      MYSQL_USER: myuser
+      MYSQL_PASSWORD: mypassword
+    ports:
+      - "3307:3306"
+    volumes:
+      - cyfast_w1_mysql:/var/lib/mysql
+      - ./MYSQL/cyfast2/2.0.0/01_schema.sql:/docker-entrypoint-initdb.d/01_schema.sql:ro
+      - ./MYSQL/cyfast2/2.0.0/02_masterdata.sql:/docker-entrypoint-initdb.d/02_masterdata.sql:ro
+      - ./MYSQL/cyfast2/2.0.0/03_stored_procs.sql:/docker-entrypoint-initdb.d/03_stored_procs.sql:ro
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "127.0.0.1", "-uroot", "-proot"]
+      interval: 5s
+      timeout: 5s
+      retries: 30
+    networks:
+      - cyfast-w1-net
+
+  rabbitmq-w1:
+    image: rabbitmq:3.13-management
+    container_name: cyfast-w1-rabbitmq
+    environment:
+      RABBITMQ_DEFAULT_USER: guest
+      RABBITMQ_DEFAULT_PASS: guest
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 30
+    networks:
+      - cyfast-w1-net
+
+networks:
+  cyfast-w1-net:
+    name: cyfast-w1-net
+
+volumes:
+  cyfast_w1_mysql:

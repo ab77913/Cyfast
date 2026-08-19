@@ -1,0 +1,7 @@
+project_id={project_id}
+
+REQUIREMENTS:
+{requirements_json}
+
+ARTIFACTS:
+{artifacts_json}

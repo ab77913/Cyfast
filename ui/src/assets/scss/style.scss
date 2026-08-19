@@ -1,0 +1,90 @@
+/**======================================================================
+=========================================================================
+Template Name: Gradient Able Admin Template
+Author: Codedthemes
+=========================================================================
+Bootstrap 5 variable build lives in entry/_bootstrap-stack.scss so the
+vendor import chain is one place to swap when twbs/bootstrap ships @use.
+Theme files still use @import (shared global variables) until partials are
+migrated to explicit @use of settings layers.
+=========================================================================== */
+
+// Theme Font
+@import 'themes/font/theme-font';
+
+// theme scrollbar
+@import 'themes/plugin/perfect-scrollbar';
+
+// Bootstrap + overrides + react-module + full Bootstrap CSS
+@import 'entry/bootstrap-stack';
+
+// icon
+@import 'themes/font/next-icon';
+@import 'themes/font/feather';
+@import 'themes/font/fontawesome';
+@import 'themes/font/flaticon';
+@import 'themes/font/cryptofont';
+
+// bootstrap css
+@import 'themes/bootstrap-overlay/card';
+@import 'themes/bootstrap-overlay/button';
+@import 'themes/bootstrap-overlay/radiobox-checkbox';
+@import 'themes/bootstrap-overlay/switches';
+@import 'themes/bootstrap-overlay/badge';
+@import 'themes/bootstrap-overlay/popovers';
+
+@import 'themes/general';
+@import 'themes/generic';
+@import 'themes/plugin/animate';
+
+// theme layouts
+@import 'themes/layouts/menu-lite';
+@import 'layout-dark';
+@import 'layout-rtl';
+
+// Dashboard Widgets
+@import 'themes/dashboard/widget';
+
+// custom plugin
+@import 'themes/plugin/sweatalert';
+@import 'themes/plugin/lightbox';
+@import 'themes/plugin/notification';
+@import 'themes/plugin/pnotify';
+@import 'themes/plugin/bar-rating';
+@import 'themes/plugin/rangeslider';
+@import 'themes/plugin/daterange';
+@import 'themes/plugin/tags-input';
+@import 'themes/plugin/maxlength';
+@import 'themes/plugin/wizard';
+@import 'themes/plugin/select2';
+@import 'themes/plugin/data-tables';
+@import 'react-responsive-modal/styles.css';
+@import 'yet-another-react-lightbox/styles.css';
+@import 'themes/plugin/yet-another-react-lightbox';
+@import 'themes/plugin/react-responsive-carousel.scss';
+@import 'themes/plugin/react-responsive-modal.scss';
+@import 'themes/plugin/react-accssible-treeview.scss';
+
+// Charts
+@import 'themes/plugin/highcharts';
+@import 'themes/plugin/peitychart';
+
+//Chat
+@import 'themes/chat/chat';
+
+// pages
+@import 'themes/pages/authentication';
+@import 'themes/pages/maintaince';
+@import 'themes/pages/pages';
+@import 'themes/pages/help-desk';
+@import 'themes/pages/fullcalender';
+@import 'themes/pages/icon-lauouts';
+@import 'themes/pages/user';
+@import 'themes/pages/task-board';
+@import 'themes/pages/masonry-gallery';
+
+// custom
+@import 'themes/custom';
+
+// cyfast
+@import 'cyfast/generic';

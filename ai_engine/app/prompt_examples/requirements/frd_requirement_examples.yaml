@@ -1,0 +1,28 @@
+document_type: FRD
+domain: hospital_management
+task: requirement_generation
+usage: few_shot_guidance_only
+examples:
+  - example_id: FRD_REQ_001
+    source_excerpt: "On the Patient Registration screen, staff shall enter patient name, age, gender, phone number, and address. All fields except address are mandatory."
+    expected_output:
+      requirement_title: "Mandatory patient registration fields"
+      requirement_description: "The Patient Registration screen shall capture patient name, age, gender, phone number, and address, and shall require name, age, gender, and phone number before saving."
+      rationale: "Mandatory demographic and contact fields ensure each patient record is usable for visit and prescription workflows."
+      priority: "High"
+
+  - example_id: FRD_REQ_002
+    source_excerpt: "Staff shall record a patient visit by selecting the patient, assigned doctor, visit date, and visit reason."
+    expected_output:
+      requirement_title: "Visit record creation"
+      requirement_description: "The Visit Management module shall allow staff to create a visit by selecting a registered patient, assigned doctor, visit date, and visit reason."
+      rationale: "Structured visit records connect patient care activity to prescriptions and patient history."
+      priority: "High"
+
+  - example_id: FRD_REQ_003
+    source_excerpt: "The staff list shall support search by staff name and filter by department."
+    expected_output:
+      requirement_title: "Staff search and department filter"
+      requirement_description: "The Staff Management module shall allow users to search staff by name and filter the list by department."
+      rationale: "Search and filtering help staff locate colleagues quickly during visit and prescription workflows."
+      priority: "Medium"

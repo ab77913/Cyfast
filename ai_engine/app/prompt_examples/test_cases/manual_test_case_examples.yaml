@@ -1,0 +1,70 @@
+domain: hospital_management
+task: test_case_generation
+usage: few_shot_guidance_only
+examples:
+  - example_id: TC_MAN_001
+    source_scenario:
+      scenario_name: "Register patient with valid mandatory details"
+      scenario_description: "Verify that hospital staff can register a new patient when all mandatory demographic and contact fields contain valid values."
+    expected_output:
+      test_case_name: "Verify patient registration with valid mandatory details"
+      test_case_description: "Verify that a patient record is saved when all mandatory registration fields contain valid values."
+      test_type: "POSITIVE"
+      priority: "High"
+      preconditions:
+        - "Hospital Management System is open."
+        - "Patient Registration screen is accessible."
+      test_steps:
+        - step_no: 1
+          action: "Open the Patient Registration screen."
+          expected: "Patient Registration form is displayed."
+        - step_no: 2
+          action: "Enter patient name, age, gender, phone number, and address."
+          expected: "Entered values are accepted by the form."
+        - step_no: 3
+          action: "Click Save."
+          expected: "Patient record is saved successfully."
+      test_data:
+        patient_name: "Ravi Kumar"
+        age: 35
+        gender: "Male"
+        phone: "9876543210"
+        address: "Chennai"
+      expected_result: "The system saves the patient record and displays the newly registered patient in the patient list."
+      tags:
+        - "patient-registration"
+        - "positive"
+      automation_percentage: 80
+
+  - example_id: TC_MAN_002
+    source_scenario:
+      scenario_name: "Create visit for registered patient"
+      scenario_description: "Verify that staff can create a visit by selecting a registered patient, doctor, valid visit date, and visit reason."
+    expected_output:
+      test_case_name: "Verify visit creation for registered patient"
+      test_case_description: "Verify that staff can create a visit record for an existing patient with a valid doctor, date, and reason."
+      test_type: "POSITIVE"
+      priority: "High"
+      preconditions:
+        - "Hospital Management System is open."
+        - "At least one registered patient and one active doctor exist."
+      test_steps:
+        - step_no: 1
+          action: "Open the Visit Management screen."
+          expected: "Visit creation form is displayed."
+        - step_no: 2
+          action: "Select patient, doctor, visit date, and enter visit reason."
+          expected: "Selected values are accepted by the form."
+        - step_no: 3
+          action: "Click Save."
+          expected: "Visit record is saved successfully."
+      test_data:
+        patient_name: "Ravi Kumar"
+        doctor_name: "Dr. Meera Iyer"
+        visit_date: "2026-06-19"
+        visit_reason: "General consultation"
+      expected_result: "The visit appears in the visit list for the selected patient."
+      tags:
+        - "visit-management"
+        - "positive"
+      automation_percentage: 75

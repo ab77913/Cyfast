@@ -1,0 +1,16 @@
+Validate the following generated artifact.
+
+ARTIFACT TYPE:
+{artifact_type_json}
+
+ARTIFACT SUMMARY:
+{artifact_summary}
+
+CHECKLIST:
+{checklist_blob}
+
+OPTIONAL CONTEXT:
+{context_blob}
+
+Use the validation rules and output schema from the system prompt.
+Return valid JSON only.

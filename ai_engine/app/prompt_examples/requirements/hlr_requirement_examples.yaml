@@ -1,0 +1,28 @@
+document_type: HLR
+domain: hospital_management
+task: requirement_generation
+usage: few_shot_guidance_only
+examples:
+  - example_id: HLR_REQ_001
+    source_excerpt: "The system shall manage the end-to-end patient care flow from registration through visit recording, prescription creation, and history review."
+    expected_output:
+      requirement_title: "Patient care workflow support"
+      requirement_description: "The system shall support the patient care workflow from registration through visit recording, prescription creation, and patient history review."
+      rationale: "A connected workflow reduces manual handoffs between front desk, clinical staff, and administrative review."
+      priority: "High"
+
+  - example_id: HLR_REQ_002
+    source_excerpt: "Staff Management shall maintain authoritative staff master data used by Visit Management and Prescription Management."
+    expected_output:
+      requirement_title: "Shared staff master data"
+      requirement_description: "Staff Management shall maintain staff master records that Visit Management and Prescription Management use when assigning doctors and prescribing clinicians."
+      rationale: "Consistent staff data prevents mismatched doctor assignments across visits and prescriptions."
+      priority: "High"
+
+  - example_id: HLR_REQ_003
+    source_excerpt: "The Dashboard shall aggregate counts from patient visits, active staff, and open prescriptions."
+    expected_output:
+      requirement_title: "Cross-module dashboard aggregation"
+      requirement_description: "The Dashboard shall aggregate and display counts derived from patient visits, active staff records, and open prescriptions."
+      rationale: "Cross-module aggregation gives hospital staff an operational snapshot without opening each module separately."
+      priority: "Medium"

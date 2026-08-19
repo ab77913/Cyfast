@@ -1,0 +1,31 @@
+project_id={project_id}{org_line}
+
+COVERAGE REPAIR REQUEST:
+The following test_scenario_id values still have no valid test case from prior generation: {missing_scenario_ids}
+
+Generate at least one complete test case for every scenario listed below. Do not omit any test_scenario_id.
+Copy each test_scenario_id to scenario_id on every derived test case exactly as provided.
+
+MISSING SCENARIOS JSON:
+{scenarios_blob}
+
+LINKED REQUIREMENTS JSON:
+{requirements_blob}
+{additional_block}
+
+Repair instructions:
+- Return test cases only for the missing scenarios listed above.
+- Every listed test_scenario_id must receive at least one complete test case in this response.
+- If a scenario is simple, still return one complete test case.
+- Every test case row must include all required fields from the system schema:
+  test_case_name, test_case_description, test_type, priority, preconditions,
+  test_steps (each with step_no, action, expected), test_data, expected_result,
+  tags as a non-empty array, automation_percentage as integer 0-100.
+- Keep steps concrete and executable, and keep expected results objectively verifiable.
+- Use concrete test data when available in source; otherwise use safe neutral placeholders.
+- Keep automation_percentage realistic for each test case.
+- Avoid duplicate or wording-only variant test cases for the same missing scenario obligation.
+- Use the output JSON schema defined in the system instructions.
+- Return only valid JSON with top-level key test_cases.
+
+Return valid JSON only. Do not include markdown, comments, or explanations.

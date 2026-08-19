@@ -1,0 +1,8 @@
+Validate the following AI-generated test case draft.
+
+DRAFT / CONTEXT PAYLOAD:
+{draft_blob}
+
+Use the validation rules and output schema from the system prompt.
+Judge the test cases against linked requirements/context when present.
+Return valid JSON only.

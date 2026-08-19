@@ -1,0 +1,67 @@
+project_id={project_id}{org_line}
+{coverage_block}
+
+Generate manual test cases using only the approved test scenarios and linked requirements below.
+
+APPROVED TEST SCENARIOS JSON:
+Each scenario includes test_scenario_id. You must copy test_scenario_id to scenario_id on every derived test case exactly as provided.
+
+You must return at least one complete test case for every test_scenario_id listed below. Do not skip any scenario.
+
+{scenarios_blob}
+
+LINKED REQUIREMENTS JSON:
+Use requirement_id, requirement_no, title, description, acceptance criteria, constraints, and business rules only when they are present below.
+
+{requirements_blob}
+
+OPTIONAL ADDITIONAL INSTRUCTIONS:
+Use these instructions only if they do not conflict with the approved scenarios, linked requirements, traceability rules, or output schema.
+
+{additional_block}
+
+Generation instructions:
+- Generate test cases only for the approved scenarios listed above.
+- Every test_scenario_id listed above must receive at least one complete test case. Do not omit any scenario_id.
+- If a scenario is simple, still generate one complete test case for it.
+- Every test case row must include: test_case_name, test_case_description, test_type, priority, preconditions, test_steps (each with step_no, action, expected), test_data, expected_result, tags as a non-empty array, automation_percentage as integer 0-100.
+- Make each step executable and specific; avoid generic steps like "perform action" or "verify behavior" without context.
+- Make expected results precise and objectively verifiable.
+- Use concrete test data when supported by supplied input; otherwise use safe neutral placeholders without inventing new features.
+- Keep automation_percentage realistic per case based on determinism and manual effort.
+- For each scenario, first identify distinct test obligations (actions, rules, validations, states, outcomes).
+- If a scenario contains multiple distinct behaviors (for example add, edit, search, deactivate), generate separate atomic test cases for each behavior instead of one combined workflow case.
+- Use one test case only when the scenario is narrow and cannot be meaningfully split.
+- Generate as many test cases as needed to cover materially distinct obligations supported by the scenario and linked requirement.
+- Do not use a fixed number of test cases per scenario.
+- Do not generate duplicate test cases or minor variations with the same purpose.
+- Do not generate test cases for features or rules not present in the supplied input.
+- Use "Application is open" as the default precondition when no explicit start state is given.
+- Keep all test cases manual, executable, and traceable.
+- Use the output JSON schema defined in the system instructions.
+- Return only valid JSON with top-level key test_cases.
+
+Coverage selection guidance:
+Consider these coverage types only when supported by the input:
+- positive path
+- negative path
+- required field validation
+- invalid input validation
+- boundary value
+- equivalence class
+- decision or business rule
+- workflow or state transition
+- data creation, update, or deletion
+- search, filter, or sort
+- error handling
+- data visibility or history
+- regression
+
+Numbering:
+- Use scenario-based numbering.
+- Scenario 1 uses TC-1.1, TC-1.2, TC-1.3.
+- Scenario 2 uses TC-2.1, TC-2.2, TC-2.3.
+- If a scenario needs only one test case, use TC-x.1.
+- Do not use flat numbering such as TC-1, TC-2, TC-3.
+
+Return valid JSON only. Do not include markdown, comments, or explanations.

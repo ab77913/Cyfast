@@ -1,0 +1,23 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://cyfast.dev/contracts/windows/command-envelope/1.0",
+  "title": "CyFAST Windows command envelope v1",
+  "type": "object",
+  "required": ["schema_version", "execution_command_id", "agent_id", "organization_id", "command_type", "payload", "payload_hash", "idempotency_key", "correlation_id", "expires_at"],
+  "properties": {
+    "schema_version": { "const": "1.0" },
+    "execution_command_id": { "type": "string", "minLength": 1 },
+    "interactive_session_id": { "type": ["string", "null"] },
+    "agent_id": { "type": "string", "minLength": 1 },
+    "organization_id": { "type": ["string", "integer"] },
+    "project_id": { "type": ["integer", "null"] },
+    "command_type": { "enum": ["windows.health", "windows.get_capabilities", "windows.start_session", "windows.end_session", "windows.launch_profile", "windows.attach_profile", "windows.inspect_ui", "windows.capture_screenshot", "windows.invoke_element", "windows.set_element_value", "windows.select_element", "windows.close_application"] },
+    "payload": { "type": "object" },
+    "payload_hash": { "type": "string", "pattern": "^[A-Fa-f0-9]{64}$" },
+    "idempotency_key": { "type": "string", "minLength": 1, "maxLength": 128 },
+    "correlation_id": { "type": "string", "minLength": 1 },
+    "expires_at": { "type": "string", "format": "date-time" },
+    "status": { "type": "string", "default": "REQUESTED" }
+  },
+  "additionalProperties": false
+}

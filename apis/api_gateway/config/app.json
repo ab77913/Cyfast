@@ -1,0 +1,46 @@
+{
+  "local": {
+    "host": "0.0.0.0",
+    "port": 8080,
+    "upstreams": {
+      "general_management": "http://127.0.0.1:8088",
+      "user_management": "http://127.0.0.1:8087",
+      "logger_service": "http://127.0.0.1:8090",
+      "storage_service": "http://127.0.0.1:8092",
+      "agent_gateway": "http://127.0.0.1:8094"
+    }
+  },
+  "development": {
+    "host": "0.0.0.0",
+    "port": 8080,
+    "upstreams": {
+      "general_management": "http://127.0.0.1:8088",
+      "user_management": "http://127.0.0.1:8087",
+      "logger_service": "http://127.0.0.1:8090",
+      "storage_service": "http://127.0.0.1:8092",
+      "agent_gateway": "http://127.0.0.1:8094"
+    }
+  },
+  "staging": {
+    "host": "0.0.0.0",
+    "port": 8080,
+    "upstreams": {
+      "general_management": "http://host.docker.internal:8088",
+      "user_management": "http://host.docker.internal:8087",
+      "logger_service": "http://host.docker.internal:8090",
+      "storage_service": "http://host.docker.internal:8092",
+      "agent_gateway": "http://host.docker.internal:8094"
+    }
+  },
+  "production": {
+    "host": "0.0.0.0",
+    "port": 8080,
+    "upstreams": {
+      "general_management": "http://127.0.0.1:8088",
+      "user_management": "http://127.0.0.1:8087",
+      "logger_service": "http://127.0.0.1:8090",
+      "storage_service": "http://127.0.0.1:8092",
+      "agent_gateway": "http://127.0.0.1:8094"
+    }
+  }
+}

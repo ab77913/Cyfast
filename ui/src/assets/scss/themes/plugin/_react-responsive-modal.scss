@@ -1,0 +1,13 @@
+@import 'react-responsive-carousel/lib/styles/carousel.min.css';
+
+.react-responsive-modal-modal {
+  background: transparent;
+  box-shadow: none;
+}
+.react-responsive-modal-closeButton {
+  display: none;
+}
+
+.carousel.carousel-slider .control-arrow:hover {
+  background: transparent;
+}

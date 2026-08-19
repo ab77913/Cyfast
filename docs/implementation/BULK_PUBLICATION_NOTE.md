@@ -1,0 +1,1 @@
+The complete implementation is also delivered as a Git bundle and source archive from the ChatGPT execution environment because the repository's dedicated Windows acceptance gate requires a separate real machine.

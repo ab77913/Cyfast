@@ -1,0 +1,49 @@
+.cyfast-content-modal {
+  width: min(1000px, 96vw);
+  max-height: 92vh;
+  overflow: auto;
+}
+
+.cyfast-content-preview {
+  max-height: 60vh;
+  overflow: auto;
+  margin: 0;
+  padding: 16px;
+  border: 1px solid color-mix(in srgb, currentColor 16%, transparent);
+  border-radius: 9px;
+  background: color-mix(in srgb, Canvas 92%, #000 8%);
+  color: CanvasText;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 12px;
+  line-height: 1.55;
+}
+
+.cyfast-section-heading {
+  margin-top: 22px;
+}
+
+.cyfast-transition-box select,
+.cyfast-transition-box input {
+  min-width: 180px;
+  border: 1px solid color-mix(in srgb, currentColor 20%, transparent);
+  border-radius: 8px;
+  background: Canvas;
+  color: CanvasText;
+  padding: 9px 10px;
+}
+
+@media (max-width: 760px) {
+  .cyfast-transition-box .cyfast-actions {
+    width: 100%;
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .cyfast-transition-box select,
+  .cyfast-transition-box input {
+    min-width: 0;
+    width: 100%;
+  }
+}

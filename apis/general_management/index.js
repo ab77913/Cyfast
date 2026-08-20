@@ -151,6 +151,16 @@ const testScenarioRoutes = require("./routes/test-scenario-routes");
 const generationValidationRoutes = require("./routes/generation-validation-routes");
 const userNotificationRoutes = require("./routes/user-notification-routes");
 const windowsRoutes = require("./routes/windows-routes");
+const platformExecutionRoutes = require("./routes/platform-execution-routes");
+const executionTraceRoutes = require("./routes/execution-trace-routes");
+const executionMetricsRoutes = require("./routes/execution-metrics-routes");
+const executionAiRepairRoutes = require("./routes/execution-ai-repair-routes");
+const qualityLifecycleRoutes = require("./routes/quality-lifecycle-routes");
+const qualityLifecycleExecutionRoutes = require("./routes/quality-lifecycle-execution-routes");
+const qualityLifecycleContentRoutes = require("./routes/quality-lifecycle-content-routes");
+const qualityGenerationRoutes = require("./routes/quality-generation-routes");
+const executionProductFixRoutes = require("./routes/execution-product-fix-routes");
+const executionProductVerificationRoutes = require("./routes/execution-product-verification-routes");
 const executionLifecyclePlugin = require("./plugins/execution-lifecycle-plugin");
 
 async function buildApp() {
@@ -219,6 +229,16 @@ async function buildApp() {
   await fastify.register(testAgentRoutes, { prefix: "/test_agents" });
   await fastify.register(projectDocumentRoutes, { prefix: "/project_documents" });
   await fastify.register(windowsRoutes, { prefix: "/" });
+  await fastify.register(platformExecutionRoutes);
+  await fastify.register(executionTraceRoutes);
+  await fastify.register(executionMetricsRoutes);
+  await fastify.register(executionAiRepairRoutes);
+  await fastify.register(qualityLifecycleRoutes);
+  await fastify.register(qualityLifecycleExecutionRoutes);
+  await fastify.register(qualityLifecycleContentRoutes);
+  await fastify.register(qualityGenerationRoutes);
+  await fastify.register(executionProductFixRoutes);
+  await fastify.register(executionProductVerificationRoutes);
 }
 
 async function start() {

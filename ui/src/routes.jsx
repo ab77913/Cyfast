@@ -7,6 +7,7 @@ import AdminLayout from './layouts/AdminLayout';
 
 import GuestGuard from './components/Auth/GuestGuard';
 import AuthGuard from './components/Auth/AuthGuard';
+import PlatformExecutionConsole from "./pages/execution/PlatformExecutionConsole";
 
 //import { BASE_URL } from './config/constant';
 
@@ -33,7 +34,8 @@ const renderRoutes = (routes = []) => (
           />
         );
       })}
-    </Routes>
+            <Route path="/projects/:projectId/execution-lifecycle" element={<PlatformExecutionConsole />} />
+      </Routes>
   </Suspense>
 );
 

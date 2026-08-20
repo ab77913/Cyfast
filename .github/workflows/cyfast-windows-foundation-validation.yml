@@ -6,7 +6,7 @@ on:
       - main
   push:
     branches:
-      - codex/complete-windows-execution-20260819
+      - main
   workflow_dispatch:
 
 permissions:

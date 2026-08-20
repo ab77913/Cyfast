@@ -9,7 +9,7 @@ on:
       - '.github/workflows/cyfast-phase-a-validation.yml'
   push:
     branches:
-      - codex/cyfast-phase-a-orchestration-20260820
+      - main
   workflow_dispatch:
 
 permissions:
@@ -49,7 +49,7 @@ jobs:
 
       - name: Reject unresolved merge markers
         run: |
-          if grep -RIn --exclude-dir=.git --exclude='*.lock' -E '^(<<<<<<<|=======|>>>>>>>)' apis/general_management; then
+          if grep -RIn --exclude-dir=.git --exclude-dir=node_modules --exclude='*.lock' -E '^(<<<<<<<|=======|>>>>>>>)' apis/general_management; then
             echo 'Unresolved merge markers found.' >&2
             exit 1
           fi

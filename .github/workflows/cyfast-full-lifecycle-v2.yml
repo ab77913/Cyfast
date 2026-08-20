@@ -1,0 +1,177 @@
+name: CyFAST Full Lifecycle V2
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: cyfast-full-lifecycle-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  integrate-validate:
+    name: Integrate and validate complete lifecycle
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: |
+            apis/general_management/package-lock.json
+            ui/package-lock.json
+
+      - name: Verify complete repeat-safe integration
+        run: |
+          set -euo pipefail
+          python tools/cyfast_full_lifecycle_integrate_v2.py | tee /tmp/integration-v2-first.log
+          git diff --exit-code
+          python tools/cyfast_full_lifecycle_integrate_v2.py | tee /tmp/integration-v2-second.log
+          git diff --exit-code
+
+      - name: Compile Python services and acceptance tooling
+        run: |
+          set -euo pipefail
+          python -m compileall -q \
+            tools/cyfast_full_lifecycle_integrate.py \
+            tools/cyfast_full_lifecycle_integrate_v2.py \
+            ai_engine/app/script_repair \
+            ai_engine/app/quality_generation \
+            ai_engine/app/quality_document \
+            test_agent/test_agent/platform_runtime \
+            scripts/real_target/validate_platform_target.py
+
+      - name: Validate General Management JavaScript syntax
+        run: |
+          set -euo pipefail
+          find \
+            apis/general_management/services/execution \
+            apis/general_management/controllers \
+            apis/general_management/routes \
+            apis/general_management/database/mysql/models \
+            -type f -name '*.js' -print0 | xargs -0 -n1 node --check
+          node --check apis/general_management/services/quality-lifecycle-service.js
+          node --check apis/general_management/services/quality-lifecycle-content-service.js
+          node --check apis/general_management/services/quality-generation-orchestrator.js
+          node --check apis/general_management/services/quality-lifecycle-execution-service.js
+
+      - name: Install General Management dependencies
+        working-directory: apis/general_management
+        run: |
+          set -euo pipefail
+          if [ -f package-lock.json ]; then npm ci; else npm install --no-audit --no-fund; fi
+
+      - name: Run General Management contract and lifecycle tests
+        working-directory: apis/general_management
+        run: |
+          set -euo pipefail
+          mapfile -d '' tests < <(find tests/windows tests/execution -type f -name '*.test.js' -print0 | sort -z)
+          test "${#tests[@]}" -gt 0
+          node --test "${tests[@]}"
+          node --test test/execution-lifecycle.test.js
+
+      - name: Run cross-platform runtime tests
+        run: |
+          set -euo pipefail
+          PYTHONPATH=test_agent python -m unittest discover -s test_agent/tests -p 'test_*.py' -v
+
+      - name: Run AI generation and repair tests
+        working-directory: ai_engine
+        run: |
+          set -euo pipefail
+          PYTHONPATH=. python tests/test_script_repair_policy.py
+          PYTHONPATH=. python tests/test_quality_generation.py
+          PYTHONPATH=. python tests/test_quality_document.py
+
+      - name: Install React dependencies
+        working-directory: ui
+        run: |
+          set -euo pipefail
+          if [ -f package-lock.json ]; then npm ci; else npm install --no-audit --no-fund; fi
+
+      - name: Build production React application
+        working-directory: ui
+        env:
+          CI: "true"
+        run: npm run build
+
+      - name: Run Windows UI logic tests
+        working-directory: ui
+        run: npm run test:windows
+
+      - name: Validate additive migration set
+        run: |
+          set -euo pipefail
+          migrations=(
+            databases/MYSQL/cyfast2/2.0.0/20_platform_execution_lifecycle.sql
+            databases/MYSQL/cyfast2/2.0.0/21_execution_traceability.sql
+            databases/MYSQL/cyfast2/2.0.0/22_quality_lifecycle.sql
+            databases/MYSQL/cyfast2/2.0.0/23_quality_lifecycle_execution_link.sql
+            databases/MYSQL/cyfast2/2.0.0/24_quality_lifecycle_content.sql
+            databases/MYSQL/cyfast2/2.0.0/25_execution_product_fix.sql
+          )
+          for migration in "${migrations[@]}"; do
+            test -s "$migration"
+            grep -q 'CREATE TABLE IF NOT EXISTS' "$migration"
+          done
+
+      - name: Upload portable validation evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: cyfast-full-lifecycle-v2-${{ github.run_id }}
+          path: |
+            /tmp/integration-v2-first.log
+            /tmp/integration-v2-second.log
+          if-no-files-found: error
+          retention-days: 30
+
+  windows-dotnet:
+    name: Validate first-party Windows Agent on Windows
+    needs: integrate-validate
+    runs-on: windows-latest
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 9.0.x
+
+      - name: Locate Windows solution
+        shell: pwsh
+        run: |
+          $solution = Get-ChildItem -Path windows -Filter *.sln -Recurse | Select-Object -First 1
+          if (-not $solution) { throw 'Windows solution was not found.' }
+          "CYFAST_WINDOWS_SOLUTION=$($solution.FullName)" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+
+      - name: Restore, build and test
+        shell: pwsh
+        run: |
+          dotnet restore "$env:CYFAST_WINDOWS_SOLUTION"
+          dotnet build "$env:CYFAST_WINDOWS_SOLUTION" --configuration Release --no-restore
+          dotnet test "$env:CYFAST_WINDOWS_SOLUTION" --configuration Release --no-build --logger "trx;LogFileName=cyfast-windows-tests.trx"
+
+      - name: Upload .NET results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: cyfast-windows-dotnet-v2-${{ github.run_id }}
+          path: '**/TestResults/*.trx'
+          if-no-files-found: warn
+          retention-days: 30

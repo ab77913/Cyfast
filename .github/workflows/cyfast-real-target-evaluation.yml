@@ -1,0 +1,149 @@
+name: CyFAST Real Target Evaluation
+
+on:
+  workflow_dispatch:
+    inputs:
+      platform:
+        description: Real target platform to evaluate
+        type: choice
+        required: true
+        default: WINDOWS
+        options:
+          - WINDOWS
+          - LINUX
+          - ANDROID
+          - EMBEDDED
+          - ALL
+      insecure_local_tls:
+        description: Allow a pre-approved self-signed target certificate on the isolated lab network
+        type: boolean
+        required: false
+        default: false
+
+permissions:
+  contents: read
+
+concurrency:
+  group: cyfast-real-target-${{ inputs.platform }}
+  cancel-in-progress: false
+
+jobs:
+  acceptance-contract:
+    name: Record real-target acceptance contract
+    runs-on: ubuntu-latest
+    steps:
+      - name: Explain authoritative gate
+        run: |
+          cat <<'EOF'
+          This workflow never substitutes hosted CI for a real target.
+          A missing self-hosted runner, disconnected device, locked desktop, unavailable bench,
+          missing recording, or incomplete evidence is BLOCKED/FAILED and cannot be interpreted as PASS.
+          EOF
+
+  windows-real:
+    name: Real Windows desktop and application
+    if: ${{ inputs.platform == 'WINDOWS' || inputs.platform == 'ALL' }}
+    needs: acceptance-contract
+    runs-on: [self-hosted, cyfast-real-windows]
+    timeout-minutes: 90
+    env:
+      CYFAST_REAL_TARGET_URL: ${{ secrets.CYFAST_REAL_WINDOWS_URL }}
+      CYFAST_REAL_TARGET_TOKEN: ${{ secrets.CYFAST_REAL_WINDOWS_TOKEN }}
+      CYFAST_REAL_REQUEST_FILE: ${{ vars.CYFAST_REAL_WINDOWS_REQUEST_FILE }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Run authoritative Windows evidence gate
+        run: >-
+          python scripts/real_target/validate_platform_target.py
+          --platform WINDOWS
+          --output real-target-evidence
+          ${{ inputs.insecure_local_tls && '--insecure' || '' }}
+      - name: Upload Windows evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: cyfast-real-windows-${{ github.run_id }}
+          path: real-target-evidence
+          if-no-files-found: error
+          retention-days: 30
+
+  linux-real:
+    name: Real Linux host or desktop
+    if: ${{ inputs.platform == 'LINUX' || inputs.platform == 'ALL' }}
+    needs: acceptance-contract
+    runs-on: [self-hosted, cyfast-real-linux]
+    timeout-minutes: 90
+    env:
+      CYFAST_REAL_TARGET_URL: ${{ secrets.CYFAST_REAL_LINUX_URL }}
+      CYFAST_REAL_TARGET_TOKEN: ${{ secrets.CYFAST_REAL_LINUX_TOKEN }}
+      CYFAST_REAL_REQUEST_FILE: ${{ vars.CYFAST_REAL_LINUX_REQUEST_FILE }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Run authoritative Linux evidence gate
+        run: >-
+          python scripts/real_target/validate_platform_target.py
+          --platform LINUX
+          --output real-target-evidence
+          ${{ inputs.insecure_local_tls && '--insecure' || '' }}
+      - name: Upload Linux evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: cyfast-real-linux-${{ github.run_id }}
+          path: real-target-evidence
+          if-no-files-found: error
+          retention-days: 30
+
+  android-real:
+    name: Real connected Android device
+    if: ${{ inputs.platform == 'ANDROID' || inputs.platform == 'ALL' }}
+    needs: acceptance-contract
+    runs-on: [self-hosted, cyfast-real-android]
+    timeout-minutes: 90
+    env:
+      CYFAST_REAL_TARGET_URL: ${{ secrets.CYFAST_REAL_ANDROID_URL }}
+      CYFAST_REAL_TARGET_TOKEN: ${{ secrets.CYFAST_REAL_ANDROID_TOKEN }}
+      CYFAST_REAL_REQUEST_FILE: ${{ vars.CYFAST_REAL_ANDROID_REQUEST_FILE }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Run authoritative Android evidence gate
+        run: >-
+          python scripts/real_target/validate_platform_target.py
+          --platform ANDROID
+          --output real-target-evidence
+          ${{ inputs.insecure_local_tls && '--insecure' || '' }}
+      - name: Upload Android evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: cyfast-real-android-${{ github.run_id }}
+          path: real-target-evidence
+          if-no-files-found: error
+          retention-days: 30
+
+  embedded-real:
+    name: Real embedded protocol bench
+    if: ${{ inputs.platform == 'EMBEDDED' || inputs.platform == 'ALL' }}
+    needs: acceptance-contract
+    runs-on: [self-hosted, cyfast-real-embedded]
+    timeout-minutes: 120
+    env:
+      CYFAST_REAL_TARGET_URL: ${{ secrets.CYFAST_REAL_EMBEDDED_URL }}
+      CYFAST_REAL_TARGET_TOKEN: ${{ secrets.CYFAST_REAL_EMBEDDED_TOKEN }}
+      CYFAST_REAL_REQUEST_FILE: ${{ vars.CYFAST_REAL_EMBEDDED_REQUEST_FILE }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Run authoritative embedded evidence gate
+        run: >-
+          python scripts/real_target/validate_platform_target.py
+          --platform EMBEDDED
+          --output real-target-evidence
+          ${{ inputs.insecure_local_tls && '--insecure' || '' }}
+      - name: Upload embedded evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: cyfast-real-embedded-${{ github.run_id }}
+          path: real-target-evidence
+          if-no-files-found: error
+          retention-days: 30

@@ -11,6 +11,9 @@ from app.test_data.router import router as test_data_router
 from app.test_scripts.router import router as test_script_router
 from app.traceability.router import router as traceability_router
 from app.generation_validation.router import router as generation_validation_router
+from app.script_repair.router import router as script_repair_router
+from app.quality_generation.router import router as quality_generation_router
+from app.quality_document.router import router as quality_document_router
 
 
 @asynccontextmanager
@@ -43,6 +46,9 @@ app.include_router(generation_validation_router, prefix="/v1", tags=["generation
 app.include_router(internal.router, prefix="/internal", tags=["internal"])
 
 
+app.include_router(script_repair_router)
+app.include_router(quality_generation_router)
+app.include_router(quality_document_router)
 @app.get("/")
 async def root():
     return {"service": "cyfast-ai-engine", "docs": "/docs"}

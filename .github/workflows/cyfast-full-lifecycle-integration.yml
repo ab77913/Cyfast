@@ -1,0 +1,209 @@
+name: CyFAST Full Lifecycle Integration
+
+on:
+  push:
+    branches:
+      - codex/cyfast-full-lifecycle-20260820
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: cyfast-full-lifecycle-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  integrate-and-portable-validate:
+    name: Integrate and validate portable stack
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    outputs:
+      integrated_sha: ${{ steps.sha.outputs.value }}
+    steps:
+      - name: Checkout implementation branch
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: codex/cyfast-full-lifecycle-20260820
+
+      - name: Configure validation runtimes
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Configure Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: |
+            apis/general_management/package-lock.json
+            ui/package-lock.json
+
+      - name: Apply repeat-safe repository integration
+        run: |
+          set -euo pipefail
+          python tools/cyfast_full_lifecycle_integrate.py | tee /tmp/integration-first.json
+          git diff --binary > /tmp/integration-first.diff
+          python tools/cyfast_full_lifecycle_integrate.py | tee /tmp/integration-second.json
+          git diff --binary > /tmp/integration-second.diff
+          cmp /tmp/integration-first.diff /tmp/integration-second.diff
+
+      - name: Compile Python implementation
+        run: |
+          set -euo pipefail
+          python -m compileall -q \
+            tools/cyfast_full_lifecycle_integrate.py \
+            test_agent/test_agent/platform_runtime \
+            ai_engine/app/script_repair
+
+      - name: Validate JavaScript syntax
+        run: |
+          set -euo pipefail
+          find \
+            apis/general_management/services/execution \
+            apis/general_management/controllers \
+            apis/general_management/routes \
+            -type f -name '*.js' -print0 \
+            | xargs -0 -n1 node --check
+          node --check apis/general_management/services/quality-lifecycle-service.js
+          node --check apis/general_management/services/quality-lifecycle-execution-service.js
+          node --check apis/general_management/services/quality-lifecycle-permission-bootstrap.js
+          node --check apis/general_management/database/mysql/models/platform-execution-models.js
+          node --check apis/general_management/database/mysql/models/execution-trace-models.js
+          node --check apis/general_management/database/mysql/models/quality-lifecycle-models.js
+          node --check apis/general_management/database/mysql/models/quality-lifecycle-execution-models.js
+
+      - name: Install General Management dependencies
+        working-directory: apis/general_management
+        run: |
+          set -euo pipefail
+          if [ -f package-lock.json ]; then npm ci; else npm install --no-audit --no-fund; fi
+
+      - name: Run General Management Windows and lifecycle tests
+        working-directory: apis/general_management
+        run: |
+          set -euo pipefail
+          mapfile -d '' tests < <(find tests/windows tests/execution -type f -name '*.test.js' -print0 | sort -z)
+          if [ "${#tests[@]}" -eq 0 ]; then
+            echo 'No General Management tests were discovered.' >&2
+            exit 1
+          fi
+          node --test "${tests[@]}"
+
+      - name: Run cross-platform agent tests
+        run: |
+          set -euo pipefail
+          PYTHONPATH=test_agent python -m unittest discover \
+            -s test_agent/tests \
+            -p 'test_platform_runtime.py' \
+            -v
+
+      - name: Run AI repair policy tests
+        working-directory: ai_engine
+        run: |
+          set -euo pipefail
+          PYTHONPATH=. python tests/test_script_repair_policy.py
+
+      - name: Install React dependencies
+        working-directory: ui
+        run: |
+          set -euo pipefail
+          if [ -f package-lock.json ]; then npm ci; else npm install --no-audit --no-fund; fi
+
+      - name: Build production React application
+        working-directory: ui
+        env:
+          CI: "true"
+        run: npm run build
+
+      - name: Validate additive MySQL migrations
+        run: |
+          set -euo pipefail
+          for migration in \
+            databases/MYSQL/cyfast2/2.0.0/20_platform_execution_lifecycle.sql \
+            databases/MYSQL/cyfast2/2.0.0/21_execution_traceability.sql \
+            databases/MYSQL/cyfast2/2.0.0/22_quality_lifecycle.sql \
+            databases/MYSQL/cyfast2/2.0.0/23_quality_lifecycle_execution_link.sql; do
+            test -s "$migration"
+            grep -q 'CREATE TABLE IF NOT EXISTS' "$migration"
+          done
+
+      - name: Commit validated integration changes
+        run: |
+          set -euo pipefail
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          if ! git diff --quiet || ! git diff --cached --quiet; then
+            git add \
+              apis/general_management/index.js \
+              apis/general_management/services/execution/execution-contract.js \
+              apis/general_management/services/execution/execution-trace-service.js \
+              apis/general_management/services/execution/script-package-hydrator.js \
+              apis/general_management/services/execution/execution-store.js \
+              apis/general_management/services/execution/execution-lifecycle-service.js \
+              ai_engine/app/main.py \
+              ui/src \
+              docs/implementation/CYFAST_FULL_LIFECYCLE_INTEGRATED.md
+            git commit -m 'feat(cyfast): integrate complete cross-platform quality lifecycle'
+            git push origin HEAD:codex/cyfast-full-lifecycle-20260820
+          fi
+
+      - name: Record integrated commit SHA
+        id: sha
+        run: echo "value=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+
+      - name: Upload portable validation evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: cyfast-full-lifecycle-portable-${{ github.run_id }}
+          path: |
+            /tmp/integration-first.json
+            /tmp/integration-second.json
+            /tmp/integration-first.diff
+          if-no-files-found: error
+          retention-days: 14
+
+  windows-dotnet-validate:
+    name: Build and test first-party Windows Agent
+    needs: integrate-and-portable-validate
+    runs-on: windows-latest
+    timeout-minutes: 30
+    steps:
+      - name: Checkout integrated commit
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.integrate-and-portable-validate.outputs.integrated_sha }}
+
+      - name: Configure .NET 9
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 9.0.x
+
+      - name: Locate and validate Windows solution
+        shell: pwsh
+        run: |
+          $solution = Get-ChildItem -Path windows -Filter *.sln -Recurse | Select-Object -First 1
+          if (-not $solution) { throw 'Windows solution was not found.' }
+          "CYFAST_WINDOWS_SOLUTION=$($solution.FullName)" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+
+      - name: Restore Windows solution
+        run: dotnet restore "${{ env.CYFAST_WINDOWS_SOLUTION }}"
+
+      - name: Build Windows solution
+        run: dotnet build "${{ env.CYFAST_WINDOWS_SOLUTION }}" --configuration Release --no-restore
+
+      - name: Test Windows solution
+        run: dotnet test "${{ env.CYFAST_WINDOWS_SOLUTION }}" --configuration Release --no-build --logger "trx;LogFileName=cyfast-windows-tests.trx"
+
+      - name: Upload .NET test evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: cyfast-windows-dotnet-${{ github.run_id }}
+          path: |
+            **/TestResults/*.trx
+          if-no-files-found: warn
+          retention-days: 14

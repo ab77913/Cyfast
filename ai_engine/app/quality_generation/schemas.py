@@ -1,0 +1,399 @@
+from __future__ import annotations
+
+import enum
+import hashlib
+import json
+import re
+import uuid
+from dataclasses import dataclass
+from typing import Any, Iterable, Mapping, Sequence
+
+
+class GenerationStage(str, enum.Enum):
+    REQUIREMENTS = "REQUIREMENTS"
+    TEST_SCENARIOS = "TEST_SCENARIOS"
+    TEST_CASES = "TEST_CASES"
+    TEST_DATA = "TEST_DATA"
+    LOGICAL_STEPS = "LOGICAL_STEPS"
+    TEST_SCRIPTS = "TEST_SCRIPTS"
+
+    @classmethod
+    def parse(cls, value: str) -> "GenerationStage":
+        try:
+            return cls(str(value or "").strip().upper())
+        except ValueError as exc:
+            raise ValueError(f"Unsupported generation stage: {value!r}") from exc
+
+
+STAGE_ITEM_TYPE = {
+    GenerationStage.REQUIREMENTS: "REQUIREMENT",
+    GenerationStage.TEST_SCENARIOS: "TEST_SCENARIO",
+    GenerationStage.TEST_CASES: "TEST_CASE",
+    GenerationStage.TEST_DATA: "TEST_DATA",
+    GenerationStage.LOGICAL_STEPS: "LOGICAL_STEP",
+    GenerationStage.TEST_SCRIPTS: "TEST_SCRIPT",
+}
+
+
+SOURCE_TYPE_BY_STAGE = {
+    GenerationStage.REQUIREMENTS: {"DOCUMENT"},
+    GenerationStage.TEST_SCENARIOS: {"REQUIREMENT", "RISK"},
+    GenerationStage.TEST_CASES: {"TEST_SCENARIO"},
+    GenerationStage.TEST_DATA: {"TEST_CASE"},
+    GenerationStage.LOGICAL_STEPS: {"TEST_CASE", "TEST_DATA"},
+    GenerationStage.TEST_SCRIPTS: {"LOGICAL_STEP", "TEST_CASE", "TEST_DATA", "APPLICATION", "DEVICE", "LOCATOR_SET", "TARGET_PROFILE"},
+}
+
+
+ALLOWED_SCENARIO_CATEGORIES = {
+    "POSITIVE",
+    "NEGATIVE",
+    "BOUNDARY",
+    "FAILURE",
+    "RECOVERY",
+    "SECURITY",
+    "PERFORMANCE",
+    "COMPLIANCE",
+    "COMPATIBILITY",
+    "USABILITY",
+}
+ALLOWED_PLATFORMS = {"WINDOWS", "LINUX", "ANDROID", "EMBEDDED"}
+ACTION_KEYWORDS = (
+    "click element",
+    "click button",
+    "input text",
+    "press keys",
+    "select from list",
+    "set value",
+    "invoke element",
+    "open application",
+    "launch application",
+    "tap",
+    "send frame",
+    "write uart",
+    "start measurement",
+    "run keyword",
+)
+ASSERTION_KEYWORDS = (
+    "element should",
+    "page should",
+    "should be equal",
+    "should contain",
+    "should be true",
+    "wait until element is visible",
+    "response should",
+    "verify signal",
+    "assert",
+)
+
+
+class GenerationValidationError(ValueError):
+    def __init__(self, errors: Sequence[str]) -> None:
+        self.errors = list(errors)
+        super().__init__(" | ".join(self.errors))
+
+
+@dataclass(frozen=True, slots=True)
+class GenerationItem:
+    resource_id: str
+    resource_version: str
+    item_type: str
+    title: str
+    source_resource_ids: tuple[str, ...]
+    source_anchor: Mapping[str, Any]
+    content: Mapping[str, Any]
+    content_hash: str
+
+    def to_dict(self) -> dict[str, Any]:
+        return {
+            "resource_id": self.resource_id,
+            "resource_version": self.resource_version,
+            "item_type": self.item_type,
+            "title": self.title,
+            "source_resource_ids": list(self.source_resource_ids),
+            "source_anchor": dict(self.source_anchor),
+            "content": dict(self.content),
+            "content_hash": self.content_hash,
+        }
+
+
+def validate_generation_output(
+    stage: GenerationStage,
+    value: Mapping[str, Any],
+    *,
+    source_items: Sequence[Mapping[str, Any]],
+    platform: str | None = None,
+) -> tuple[GenerationItem, ...]:
+    raw_items = value.get("items")
+    if not isinstance(raw_items, list) or not raw_items:
+        raise GenerationValidationError(["Generation response must contain a non-empty items array"])
+    if len(raw_items) > 250:
+        raise GenerationValidationError(["Generation response contains more than 250 items"])
+
+    source_ids = {
+        str(item.get("resource_id"))
+        for item in source_items
+        if item.get("resource_id") is not None
+    }
+    expected_type = STAGE_ITEM_TYPE[stage]
+    output: list[GenerationItem] = []
+    errors: list[str] = []
+    seen_hashes: set[str] = set()
+    seen_ids: set[str] = set()
+    normalized_platform = str(platform or "").upper() or None
+
+    for index, raw in enumerate(raw_items, start=1):
+        if not isinstance(raw, Mapping):
+            errors.append(f"Item {index} must be an object")
+            continue
+        try:
+            item = _validate_item(
+                stage,
+                expected_type,
+                raw,
+                source_ids=source_ids,
+                platform=normalized_platform,
+                position=index,
+            )
+        except GenerationValidationError as exc:
+            errors.extend(f"Item {index}: {message}" for message in exc.errors)
+            continue
+        if item.resource_id in seen_ids:
+            errors.append(f"Item {index}: duplicate resource_id {item.resource_id}")
+            continue
+        if item.content_hash in seen_hashes:
+            continue
+        seen_ids.add(item.resource_id)
+        seen_hashes.add(item.content_hash)
+        output.append(item)
+
+    if errors:
+        raise GenerationValidationError(errors)
+    if not output:
+        raise GenerationValidationError(["All generated items were duplicates or invalid"])
+    return tuple(output)
+
+
+def _validate_item(
+    stage: GenerationStage,
+    expected_type: str,
+    raw: Mapping[str, Any],
+    *,
+    source_ids: set[str],
+    platform: str | None,
+    position: int,
+) -> GenerationItem:
+    errors: list[str] = []
+    title = _text(raw.get("title") or raw.get("name"), 3, 512, "title", errors)
+    resource_id = _safe_resource_id(raw.get("resource_id")) or _generated_id(expected_type)
+    resource_version = _safe_version(raw.get("resource_version") or "1")
+    item_type = str(raw.get("item_type") or expected_type).upper()
+    if item_type != expected_type:
+        errors.append(f"item_type must be {expected_type}")
+
+    raw_sources = raw.get("source_resource_ids") or raw.get("source_ids") or []
+    if isinstance(raw_sources, str):
+        raw_sources = [raw_sources]
+    if not isinstance(raw_sources, list):
+        errors.append("source_resource_ids must be an array")
+        raw_sources = []
+    normalized_sources = tuple(dict.fromkeys(str(value) for value in raw_sources if str(value).strip()))
+    if not normalized_sources:
+        errors.append("At least one source_resource_id is required")
+    unknown = [value for value in normalized_sources if source_ids and value not in source_ids]
+    if unknown:
+        errors.append(f"Unknown source_resource_ids: {', '.join(unknown)}")
+
+    source_anchor = raw.get("source_anchor")
+    if not isinstance(source_anchor, Mapping) or not source_anchor:
+        errors.append("source_anchor must be a non-empty object")
+        source_anchor = {}
+    content = raw.get("content") if isinstance(raw.get("content"), Mapping) else {
+        key: value
+        for key, value in raw.items()
+        if key not in {"resource_id", "resource_version", "item_type", "title", "name", "source_resource_ids", "source_ids", "source_anchor"}
+    }
+    if not content:
+        errors.append("content must be a non-empty object")
+
+    if stage is GenerationStage.REQUIREMENTS:
+        _validate_requirement(content, errors)
+    elif stage is GenerationStage.TEST_SCENARIOS:
+        _validate_scenario(content, errors)
+    elif stage is GenerationStage.TEST_CASES:
+        _validate_test_case(content, errors)
+    elif stage is GenerationStage.TEST_DATA:
+        _validate_test_data(content, errors)
+    elif stage is GenerationStage.LOGICAL_STEPS:
+        _validate_logical_steps(content, errors)
+    elif stage is GenerationStage.TEST_SCRIPTS:
+        _validate_script(content, platform, errors)
+
+    if errors:
+        raise GenerationValidationError(errors)
+    normalized_content = _normalize_json(content)
+    content_hash = hashlib.sha256(
+        json.dumps(normalized_content, ensure_ascii=False, separators=(",", ":"), sort_keys=True).encode("utf-8")
+    ).hexdigest()
+    return GenerationItem(
+        resource_id=resource_id,
+        resource_version=resource_version,
+        item_type=item_type,
+        title=title,
+        source_resource_ids=normalized_sources,
+        source_anchor=_normalize_json(source_anchor),
+        content=normalized_content,
+        content_hash=content_hash,
+    )
+
+
+def _validate_requirement(content: Mapping[str, Any], errors: list[str]) -> None:
+    _text(content.get("description"), 10, 20_000, "description", errors)
+    criteria = content.get("acceptance_criteria")
+    if not isinstance(criteria, list) or not criteria or any(not str(value).strip() for value in criteria):
+        errors.append("acceptance_criteria must be a non-empty array")
+    requirement_type = str(content.get("requirement_type") or content.get("type") or "FUNCTIONAL").upper()
+    if requirement_type not in {"BUSINESS", "FUNCTIONAL", "NON_FUNCTIONAL", "SAFETY", "INTERFACE", "SECURITY", "PERFORMANCE", "COMPLIANCE"}:
+        errors.append("requirement_type is invalid")
+
+
+def _validate_scenario(content: Mapping[str, Any], errors: list[str]) -> None:
+    _text(content.get("objective"), 10, 20_000, "objective", errors)
+    category = str(content.get("category") or "").upper()
+    if category not in ALLOWED_SCENARIO_CATEGORIES:
+        errors.append("scenario category is invalid")
+    platforms = content.get("platforms")
+    if not isinstance(platforms, list) or not platforms:
+        errors.append("platforms must be a non-empty array")
+    elif any(str(value).upper() not in ALLOWED_PLATFORMS for value in platforms):
+        errors.append("platforms contains an unsupported platform")
+    _text(content.get("expected_outcome"), 3, 20_000, "expected_outcome", errors)
+
+
+def _validate_test_case(content: Mapping[str, Any], errors: list[str]) -> None:
+    steps = content.get("steps")
+    if not isinstance(steps, list) or not steps:
+        errors.append("steps must be a non-empty array")
+        return
+    if len(steps) > 200:
+        errors.append("test case contains more than 200 steps")
+    for index, step in enumerate(steps, start=1):
+        if not isinstance(step, Mapping):
+            errors.append(f"step {index} must be an object")
+            continue
+        _text(step.get("action"), 2, 4096, f"step {index} action", errors)
+        _text(step.get("expected_result"), 2, 4096, f"step {index} expected_result", errors)
+
+
+def _validate_test_data(content: Mapping[str, Any], errors: list[str]) -> None:
+    category = str(content.get("category") or "").upper()
+    if category not in {"VALID", "INVALID", "BOUNDARY", "SECURITY", "CONFIGURATION", "PROTOCOL", "RECOVERY"}:
+        errors.append("test data category is invalid")
+    if "values" not in content and "secret_references" not in content:
+        errors.append("test data requires values or secret_references")
+    if _contains_plaintext_secret(content):
+        errors.append("test data contains a possible plaintext secret")
+
+
+def _validate_logical_steps(content: Mapping[str, Any], errors: list[str]) -> None:
+    steps = content.get("steps")
+    if not isinstance(steps, list) or not steps:
+        errors.append("logical steps must be a non-empty array")
+        return
+    actions = 0
+    assertions = 0
+    for index, step in enumerate(steps, start=1):
+        if not isinstance(step, Mapping):
+            errors.append(f"logical step {index} must be an object")
+            continue
+        action = str(step.get("action") or "").strip()
+        assertion = str(step.get("assertion") or "").strip()
+        if action:
+            actions += 1
+        if assertion:
+            assertions += 1
+    if actions < 1:
+        errors.append("logical steps require at least one action")
+    if assertions < 1:
+        errors.append("logical steps require at least one assertion")
+
+
+def _validate_script(content: Mapping[str, Any], platform: str | None, errors: list[str]) -> None:
+    script = str(content.get("script") or content.get("content") or "")
+    filename = str(content.get("filename") or "")
+    script_platform = str(content.get("platform") or platform or "").upper()
+    if script_platform not in ALLOWED_PLATFORMS:
+        errors.append("script platform is invalid")
+    if not re.fullmatch(r"[A-Za-z0-9._-]{1,255}\.robot", filename, re.I):
+        errors.append("filename must be a safe .robot filename")
+    if len(script) < 20 or len(script.encode("utf-8")) > 225_280:
+        errors.append("Robot script size is invalid")
+        return
+    lowered = script.lower()
+    if not any(keyword in lowered for keyword in ACTION_KEYWORDS):
+        errors.append("Robot script has no meaningful action")
+    if not any(keyword in lowered for keyword in ASSERTION_KEYWORDS):
+        errors.append("Robot script has no meaningful assertion")
+    if re.search(r"^\s*(?:#\s*)?(?:TODO|FIXME)\b", script, re.I | re.M) or re.search(
+        r"<locator>|replace_me|your_locator|placeholder_locator", script, re.I
+    ):
+        errors.append("Robot script contains unresolved placeholders")
+    if re.search(r"^\s*(?:Run|Run Process|Start Process)\s{2,}(?:powershell|cmd(?:\.exe)?|bash|sh)\b", script, re.I | re.M):
+        errors.append("Robot script contains arbitrary shell execution")
+    if re.search(r"\bdesiredCapabilities\b", script, re.I):
+        errors.append("Robot script contains legacy Appium capabilities")
+    if re.search(r"^\s*\$\{(?:PASSWORD|TOKEN|SECRET|API_KEY)\}\s{2,}(?!%\{|\$\{)[^#\s].+$", script, re.I | re.M):
+        errors.append("Robot script contains a possible plaintext credential")
+    if re.search(r"(?:^|[\s\"'])(?:/home/|/tmp/|/var/tmp/)", script, re.I) or re.search(
+        r"(?:^|[\s\"'])[A-Za-z]:\\", script
+    ):
+        errors.append("Robot script contains an unresolved host-specific path")
+
+
+def _contains_plaintext_secret(value: Any, parent_key: str = "") -> bool:
+    if isinstance(value, list):
+        return any(_contains_plaintext_secret(item, parent_key) for item in value)
+    if not isinstance(value, Mapping):
+        return bool(
+            re.search(r"password|passwd|secret|token|api[_-]?key", parent_key, re.I)
+            and str(value).strip()
+            and not str(value).startswith(("%{", "${", "env:", "secret:"))
+        )
+    return any(_contains_plaintext_secret(item, str(key)) for key, item in value.items())
+
+
+def _text(value: Any, minimum: int, maximum: int, name: str, errors: list[str]) -> str:
+    text = str(value or "").strip()
+    if len(text) < minimum or len(text) > maximum:
+        errors.append(f"{name} must contain {minimum}-{maximum} characters")
+    return text
+
+
+def _safe_resource_id(value: Any) -> str | None:
+    if value is None or value == "":
+        return None
+    text = str(value)
+    return text if re.fullmatch(r"[A-Za-z0-9._:-]{1,128}", text) else None
+
+
+def _safe_version(value: Any) -> str:
+    text = str(value or "1")
+    if not re.fullmatch(r"[A-Za-z0-9._:+-]{1,128}", text):
+        raise GenerationValidationError(["resource_version is invalid"])
+    return text
+
+
+def _generated_id(item_type: str) -> str:
+    prefix = {
+        "REQUIREMENT": "REQ",
+        "TEST_SCENARIO": "SCN",
+        "TEST_CASE": "TC",
+        "TEST_DATA": "TD",
+        "LOGICAL_STEP": "LS",
+        "TEST_SCRIPT": "TS",
+    }.get(item_type, "ITEM")
+    return f"{prefix}-{uuid.uuid4().hex[:20]}"
+
+
+def _normalize_json(value: Any) -> Any:
+    return json.loads(json.dumps(value, ensure_ascii=False, default=str))

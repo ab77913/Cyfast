@@ -1,0 +1,63 @@
+name: CyFAST Phase A Orchestration Validation
+
+on:
+  pull_request:
+    branches:
+      - main
+    paths:
+      - 'apis/general_management/**'
+      - '.github/workflows/cyfast-phase-a-validation.yml'
+  push:
+    branches:
+      - codex/cyfast-phase-a-orchestration-20260820
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: cyfast-phase-a-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  lifecycle-core:
+    name: Lifecycle core and regression validation
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: apis/general_management/package-lock.json
+
+      - name: Install General Management dependencies
+        working-directory: apis/general_management
+        run: npm ci
+
+      - name: Run Phase A lifecycle tests
+        working-directory: apis/general_management
+        run: node --test test/execution-lifecycle.test.js
+
+      - name: Run General Management regression tests
+        working-directory: apis/general_management
+        run: npm test
+
+      - name: Reject unresolved merge markers
+        run: |
+          if grep -RIn --exclude-dir=.git --exclude='*.lock' -E '^(<<<<<<<|=======|>>>>>>>)' apis/general_management; then
+            echo 'Unresolved merge markers found.' >&2
+            exit 1
+          fi
+
+      - name: Verify JavaScript syntax
+        run: |
+          node --check apis/general_management/services/execution_lifecycle/execution-state-machine.js
+          node --check apis/general_management/services/execution_lifecycle/failure-classifier.js
+          node --check apis/general_management/services/execution_lifecycle/execution-proof-validator.js
+          node --check apis/general_management/services/execution_lifecycle/repair-policy.js
+          node --check apis/general_management/services/execution_lifecycle/execution-orchestrator.js

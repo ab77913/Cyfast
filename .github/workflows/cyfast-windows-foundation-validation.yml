@@ -1,0 +1,96 @@
+name: CyFAST Windows Foundation Validation
+
+on:
+  pull_request:
+    branches:
+      - main
+  push:
+    branches:
+      - codex/complete-windows-execution-20260819
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: cyfast-windows-foundation-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  portable-validation:
+    name: Portable backend, frontend, and Python validation
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: |
+            apis/general_management/package-lock.json
+            ui/package-lock.json
+
+      - name: Install General Management dependencies
+        working-directory: apis/general_management
+        run: npm ci
+
+      - name: Run General Management Windows contract tests
+        working-directory: apis/general_management
+        run: npm test
+
+      - name: Install frontend dependencies
+        working-directory: ui
+        run: npm ci
+
+      - name: Run frontend Windows tests
+        working-directory: ui
+        run: npm run test:windows
+
+      - name: Build production frontend
+        working-directory: ui
+        run: npm run build
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Compile AI Engine and Test Agent Python sources
+        run: |
+          python -m compileall -q ai_engine/app
+          python -m compileall -q test_agent/test_agent
+
+  dotnet-validation:
+    name: .NET 9 Windows build and tests
+    runs-on: windows-latest
+    timeout-minutes: 35
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up .NET 9
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '9.0.x'
+
+      - name: Restore solution
+        run: dotnet restore windows/CyFast.Windows.sln
+
+      - name: Build solution
+        run: dotnet build windows/CyFast.Windows.sln --configuration Release --no-restore
+
+      - name: Test solution
+        run: dotnet test windows/CyFast.Windows.sln --configuration Release --no-build --logger "trx;LogFileName=cyfast-windows-tests.trx"
+
+      - name: Upload .NET test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: cyfast-windows-dotnet-test-results-${{ github.sha }}
+          path: windows/**/TestResults/*.trx
+          if-no-files-found: warn
+          retention-days: 7

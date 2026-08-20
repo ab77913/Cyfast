@@ -1,0 +1,174 @@
+name: CyFAST Phase A Pull Request Gate
+
+on:
+  pull_request:
+    branches:
+      - main
+    types: [opened, synchronize, reopened, ready_for_review]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: cyfast-phase-a-pr-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  scope-check:
+    name: Verify authorized Phase A branch
+    if: >-
+      github.event.pull_request.head.ref == 'codex/cyfast-phase-a-orchestration-20260820' &&
+      github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    steps:
+      - name: Confirm same-repository implementation branch
+        run: |
+          test "${{ github.event.pull_request.head.repo.full_name }}" = "${{ github.repository }}"
+          test "${{ github.event.pull_request.head.ref }}" = "codex/cyfast-phase-a-orchestration-20260820"
+
+  lifecycle:
+    name: Lifecycle core tests
+    needs: scope-check
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    steps:
+      - name: Checkout exact pull-request head
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: apis/general_management/package-lock.json
+
+      - name: Install General Management dependencies
+        working-directory: apis/general_management
+        run: npm ci
+
+      - name: Run lifecycle core tests
+        working-directory: apis/general_management
+        run: node --test test/execution-lifecycle.test.js
+
+      - name: Run complete General Management regression suite
+        working-directory: apis/general_management
+        run: npm test
+
+      - name: Validate lifecycle source syntax
+        run: |
+          node --check apis/general_management/services/execution_lifecycle/execution-state-machine.js
+          node --check apis/general_management/services/execution_lifecycle/failure-classifier.js
+          node --check apis/general_management/services/execution_lifecycle/execution-proof-validator.js
+          node --check apis/general_management/services/execution_lifecycle/repair-policy.js
+          node --check apis/general_management/services/execution_lifecycle/execution-orchestrator.js
+
+  frontend-python:
+    name: Frontend and Python regressions
+    needs: scope-check
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    steps:
+      - name: Checkout exact pull-request head
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: ui/package-lock.json
+
+      - name: Install frontend dependencies
+        working-directory: ui
+        run: npm ci
+
+      - name: Run frontend Windows regression tests
+        working-directory: ui
+        run: npm run test:windows
+
+      - name: Build production frontend
+        working-directory: ui
+        run: npm run build
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Compile AI Engine and Test Agent sources
+        run: |
+          python -m compileall -q ai_engine/app
+          python -m compileall -q test_agent/test_agent
+
+  dotnet:
+    name: .NET 9 Windows build and tests
+    needs: scope-check
+    runs-on: windows-latest
+    timeout-minutes: 35
+    steps:
+      - name: Checkout exact pull-request head
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+
+      - name: Set up .NET 9
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '9.0.x'
+
+      - name: Restore Windows solution
+        run: dotnet restore windows/CyFast.Windows.sln
+
+      - name: Build Windows solution
+        run: dotnet build windows/CyFast.Windows.sln --configuration Release --no-restore
+
+      - name: Test Windows solution
+        run: dotnet test windows/CyFast.Windows.sln --configuration Release --no-build --logger "trx;LogFileName=cyfast-phase-a-windows-tests.trx"
+
+      - name: Upload test evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: cyfast-phase-a-dotnet-${{ github.event.pull_request.head.sha }}
+          path: windows/**/TestResults/*.trx
+          if-no-files-found: warn
+          retention-days: 7
+
+  merge-validated-slice:
+    name: Merge validated Phase A slice
+    needs: [lifecycle, frontend-python, dotnet]
+    if: >-
+      success() &&
+      github.event.pull_request.head.ref == 'codex/cyfast-phase-a-orchestration-20260820' &&
+      github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+    steps:
+      - name: Verify the pull-request head did not move
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          EXPECTED_HEAD: ${{ github.event.pull_request.head.sha }}
+        run: |
+          ACTUAL_HEAD="$(gh api "repos/${{ github.repository }}/pulls/${PR_NUMBER}" --jq '.head.sha')"
+          test "$ACTUAL_HEAD" = "$EXPECTED_HEAD"
+
+      - name: Mark ready and merge exact validated head
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          EXPECTED_HEAD: ${{ github.event.pull_request.head.sha }}
+        run: |
+          gh api --method PATCH "repos/${{ github.repository }}/pulls/${PR_NUMBER}" -f draft=false >/dev/null || true
+          gh api --method PUT "repos/${{ github.repository }}/pulls/${PR_NUMBER}/merge" \
+            -f merge_method=merge \
+            -f sha="$EXPECTED_HEAD" \
+            -f commit_title='Merge CyFAST Phase A execution lifecycle core' \
+            -f commit_message='Merges the hosted-validated shared execution lifecycle, truthful proof enforcement, bounded repair policy, defect lineage hooks, cancellation, and regression tests.' \
+            --jq 'if .merged == true then .sha else error(.message) end'

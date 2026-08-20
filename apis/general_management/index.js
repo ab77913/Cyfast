@@ -151,6 +151,7 @@ const testScenarioRoutes = require("./routes/test-scenario-routes");
 const generationValidationRoutes = require("./routes/generation-validation-routes");
 const userNotificationRoutes = require("./routes/user-notification-routes");
 const windowsRoutes = require("./routes/windows-routes");
+const executionLifecyclePlugin = require("./plugins/execution-lifecycle-plugin");
 
 async function buildApp() {
   await fastify.register(require("@fastify/swagger"), {
@@ -163,6 +164,11 @@ async function buildApp() {
   });
 
   await fastify.register(require("@fastify/cors"), { origin: "*" });
+
+  // CYFAST_EXECUTION_LIFECYCLE_REGISTERED
+  // Keep execution persistence, authenticated APIs, SSE replay, adapter
+  // selection, and restart reconciliation in the existing service lifecycle.
+  await fastify.register(executionLifecyclePlugin);
 
   await fastify.register(require("@fastify/formbody"), {
     bodyLimit: config.max_post_size_bytes,

@@ -2,30 +2,42 @@
 
 const path = require("path");
 
+function reject(message) {
+  throw Object.assign(new Error(message), {
+    code: "APPLICATION_NOT_APPROVED",
+    statusCode: 400,
+  });
+}
+
 function assertSafeExecutablePath(executablePath, allowUnc = false) {
   if (!executablePath || typeof executablePath !== "string") {
-    throw Object.assign(new Error("executable_path is required"), {
-      code: "APPLICATION_NOT_APPROVED",
-      statusCode: 400,
-    });
+    reject("executable_path is required");
   }
-  if (executablePath.includes("..")) {
-    throw Object.assign(new Error("Path traversal is not allowed"), {
-      code: "APPLICATION_NOT_APPROVED",
-      statusCode: 400,
-    });
+  if (executablePath.includes("\0")) {
+    reject("Null bytes are not allowed in executable_path");
   }
-  if (executablePath.startsWith("\\\\") && !allowUnc) {
-    throw Object.assign(new Error("UNC paths are not allowed by policy"), {
-      code: "APPLICATION_NOT_APPROVED",
-      statusCode: 400,
-    });
+
+  const normalizedSeparators = executablePath.replaceAll("/", "\\");
+  const segments = normalizedSeparators.split("\\");
+  if (segments.some((segment) => segment === "..")) {
+    reject("Path traversal is not allowed");
   }
-  if (!path.isAbsolute(executablePath)) {
-    throw Object.assign(new Error("executable_path must be absolute"), {
-      code: "APPLICATION_NOT_APPROVED",
-      statusCode: 400,
-    });
+
+  const isDeviceNamespace = /^(?:\\\\[?.]\\)/.test(normalizedSeparators);
+  if (isDeviceNamespace) {
+    reject("Windows device namespace paths are not allowed");
+  }
+
+  const isUnc = normalizedSeparators.startsWith("\\\\");
+  if (isUnc && !allowUnc) {
+    reject("UNC paths are not allowed by policy");
+  }
+
+  // Always evaluate the target path as a Windows path. Node's host-dependent
+  // path.isAbsolute() rejects valid C:\\... paths when General Management tests
+  // or services are running on Linux.
+  if (!path.win32.isAbsolute(normalizedSeparators)) {
+    reject("executable_path must be an absolute Windows path");
   }
 }
 

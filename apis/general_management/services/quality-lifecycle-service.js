@@ -83,6 +83,7 @@ const ITEM_TYPES = Object.freeze([
   "DEVICE",
   "LOCATOR_SET",
   "TARGET_PROFILE",
+  "AUTOMATION_PROJECT_PROFILE",
   "TEST_SCRIPT",
   "VALIDATION_REPORT",
   "EXECUTION_RUN",
@@ -100,6 +101,7 @@ const APPROVAL_REQUIRED_TYPES = new Set([
   "DEVICE",
   "LOCATOR_SET",
   "TARGET_PROFILE",
+  "AUTOMATION_PROJECT_PROFILE",
   "TEST_SCRIPT",
   "VALIDATION_REPORT",
 ]);
@@ -141,7 +143,7 @@ async function createLifecycle(input, actor) {
       source_document_version: documentVersion,
       status: STATES.DOCUMENT_UPLOADED,
       current_stage: STAGES[STATES.DOCUMENT_UPLOADED],
-      generation_policy: redactSecrets(input.generation_policy || defaultGenerationPolicy()),
+      generation_policy: normalizeGenerationPolicy(input.generation_policy || defaultGenerationPolicy()),
       acceptance_policy: redactSecrets(input.acceptance_policy || defaultAcceptancePolicy()),
       traceability_complete: false,
       ready_for_execution: false,
@@ -395,6 +397,7 @@ async function evaluateReadiness(lifecycle, transaction = null) {
     "LOGICAL_STEP",
     "TEST_SCRIPT",
     "VALIDATION_REPORT",
+    "AUTOMATION_PROJECT_PROFILE",
   ];
   for (const type of required) {
     const typed = values.filter((item) => item.item_type === type);
@@ -466,7 +469,7 @@ async function assertTransitionGate(lifecycle, nextState, transaction) {
 }
 
 function assertItemAllowedForState(status, itemType) {
-  if (["APPLICATION", "DEVICE", "LOCATOR_SET", "TARGET_PROFILE"].includes(itemType) &&
+  if (["APPLICATION", "DEVICE", "LOCATOR_SET", "TARGET_PROFILE", "AUTOMATION_PROJECT_PROFILE"].includes(itemType) &&
       ![STATES.COMPLETED, STATES.CANCELLED].includes(status)) return;
   const allowed = {
     DOCUMENT_UPLOADED: ["REQUIREMENT", "RISK"],
@@ -551,6 +554,19 @@ function normalizeItem(input = {}) {
   };
 }
 
+function normalizeGenerationPolicy(value = {}) {
+  const normalized = redactSecrets(value);
+  const platform = String(normalized.selected_platform || normalized.platform || "").toUpperCase();
+  const projectMode = String(normalized.project_mode || "NEW").toUpperCase();
+  if (!["WINDOWS", "LINUX", "ANDROID", "EMBEDDED"].includes(platform)) {
+    throw typedError("QUALITY_PLATFORM_INVALID", "generation_policy.selected_platform must be WINDOWS, LINUX, ANDROID, or EMBEDDED", 422);
+  }
+  if (!["NEW", "EXISTING"].includes(projectMode)) {
+    throw typedError("AUTOMATION_PROJECT_MODE_INVALID", "generation_policy.project_mode must be NEW or EXISTING", 422);
+  }
+  return { ...normalized, selected_platform: platform, project_mode: projectMode };
+}
+
 async function appendEvent(lifecycle, event, transaction) {
   await lifecycleModel().findByPk(lifecycle.quality_lifecycle_id, {
     transaction,
@@ -600,6 +616,8 @@ async function requireLifecycle(id, actor) {
 
 function defaultGenerationPolicy() {
   return {
+    selected_platform: "WINDOWS",
+    project_mode: "NEW",
     require_source_anchor: true,
     require_human_approval: true,
     generate_negative_cases: true,
@@ -649,6 +667,7 @@ module.exports = {
   STATES,
   STAGES,
   ITEM_TYPES,
+  normalizeGenerationPolicy,
   TRANSITIONS,
   createLifecycle,
   getLifecycle,

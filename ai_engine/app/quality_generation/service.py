@@ -55,7 +55,7 @@ class GenerationResult:
 
 
 class QualityGenerationService:
-    prompt_version = "quality-generation-v1.0"
+    prompt_version = "quality-generation-v1.1-project-aware"
 
     def __init__(
         self,
@@ -255,7 +255,7 @@ Return JSON only. Do not include markdown fences or explanations outside JSON.""
         GenerationStage.TEST_CASES: "Create executable test cases with explicit preconditions, ordered actions, test data references, and expected results. Every case must map to a source scenario.",
         GenerationStage.TEST_DATA: "Create valid, invalid, boundary, security, configuration, protocol, and recovery data. Use secret_references instead of credentials.",
         GenerationStage.LOGICAL_STEPS: "Create platform-independent ordered actions and assertions. Do not introduce implementation-specific locators or commands unless they are supplied in approved bindings.",
-        GenerationStage.TEST_SCRIPTS: "Generate complete Robot Framework scripts for the selected platform using only supplied approved application/device profiles, locator sets, target profiles, logical steps, and data references. Retain every business action and assertion. Use semantic locators before coordinates.",
+        GenerationStage.TEST_SCRIPTS: "Generate a complete project-aware Robot Framework package for the selected platform using only supplied approved automation-project, application/device, locator, target, logical-step, and data profiles. Respect NEW versus EXISTING mode. Mark generated files CREATE or UPDATE and reference unchanged approved project files through reused_file_paths. Retain every business action and assertion. Use semantic locators before coordinates.",
     }
     return common + "\n" + specifics[stage]
 
@@ -318,10 +318,15 @@ def _response_schema(stage: GenerationStage, platform: str | None) -> Mapping[st
         },
         GenerationStage.TEST_SCRIPTS: {
             "platform": platform,
-            "filename": "safe-name.robot",
+            "project_mode": "NEW|EXISTING",
+            "operation": "CREATE|UPDATE",
+            "filename": "tests/safe-name.robot",
+            "suite_path": "tests/safe-name.robot",
             "script": "complete Robot Framework script",
-            "suite_path": "safe-name.robot",
+            "resource_files": [{"path": "resources/common.resource", "operation": "CREATE|UPDATE", "content": "complete file content"}],
+            "reused_file_paths": ["resources/existing.resource"],
             "required_capabilities": [],
+            "automation_project_profile_reference": "approved automation project profile ID",
             "application_profile_reference": "approved profile ID",
             "locator_set_reference": "approved locator set ID",
             "environment_references": {},

@@ -33,7 +33,7 @@ try {
     # The dedicated W1 image is initialized from the current 01_schema.sql,
     # which already contains the 04-07 schema. Replaying those historical,
     # non-idempotent ALTER/rename migrations breaks a clean W1 startup.
-    Where-Object { $_.Name -match '^(08|09|10)_' -and $_.Name -notmatch '_down\.sql$' } |
+    Where-Object { $_.Name -match '^(08|09|10|26)_' -and $_.Name -notmatch '_down\.sql$' } |
     Sort-Object Name
   foreach ($migration in $migrations) {
     $escapedName = $migration.Name.Replace("'", "''")

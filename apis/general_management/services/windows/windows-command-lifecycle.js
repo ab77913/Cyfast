@@ -18,6 +18,7 @@ const COMMAND_STATES = Object.freeze({
   EVIDENCE_COMPLETE: "EVIDENCE_COMPLETE",
   COMPLETED: "COMPLETED",
   REJECTED: "REJECTED",
+  EXPIRED: "EXPIRED",
   FAILED: "FAILED",
   TIMED_OUT: "TIMED_OUT",
   CANCELLED: "CANCELLED",
@@ -31,6 +32,14 @@ const MANDATORY_EVIDENCE = Object.freeze({
   "windows.set_element_value": ["action_result_metadata", "resolved_element_metadata", "post_action_ui_snapshot"],
   "windows.select_element": ["action_result_metadata", "resolved_element_metadata", "post_action_ui_snapshot"],
   "windows.launch_profile": ["process_application_metadata", "launch_result"],
+  "windows.collect_robot_job_result": [
+    "robot_output_xml",
+    "robot_log_html",
+    "robot_report_html",
+    "robot_stdout",
+    "robot_stderr",
+    "robot_execution_proof",
+  ],
   "windows.end_session": ["terminal_session_metadata", "cleanup_result"],
 });
 
@@ -132,6 +141,52 @@ function extractEvidenceParts(commandType, resultPayload) {
     const meta = Buffer.from(JSON.stringify(asObj || { ended: true }), "utf8");
     parts.push({ type: "terminal_session_metadata", contentType: "application/json", bytes: meta, filename: `end-meta-${Date.now()}.json` });
     parts.push({ type: "cleanup_result", contentType: "application/json", bytes: meta, filename: `cleanup-${Date.now()}.json` });
+  }
+
+  if (commandType === "windows.collect_robot_job_result") {
+    const artifacts = asObj.artifacts || asObj.Artifacts || [];
+    const artifactTypeMap = {
+      ROBOT_OUTPUT_XML: "robot_output_xml",
+      ROBOT_LOG_HTML: "robot_log_html",
+      ROBOT_REPORT_HTML: "robot_report_html",
+      STDOUT: "robot_stdout",
+      STDERR: "robot_stderr",
+    };
+    for (const artifact of Array.isArray(artifacts) ? artifacts : []) {
+      const sourceType = String(artifact.type || artifact.Type || "").toUpperCase();
+      const type = artifactTypeMap[sourceType];
+      if (!type) continue;
+      const encoded = artifact.contentBase64 || artifact.ContentBase64;
+      if (!encoded) continue;
+      const bytes = Buffer.from(String(encoded), "base64");
+      parts.push({
+        type,
+        contentType: artifact.contentType || artifact.ContentType || "application/octet-stream",
+        bytes,
+        expectedHash: String(artifact.sha256 || artifact.Sha256 || "").toLowerCase() || null,
+        filename: String(artifact.fileName || artifact.FileName || `${type}-${Date.now()}`),
+      });
+    }
+    const proof = {
+      real_execution: asObj.realExecution === true || asObj.RealExecution === true,
+      simulated: asObj.simulated === true || asObj.Simulated === true,
+      desktop_execution: asObj.desktopExecution === true || asObj.DesktopExecution === true,
+      session_created: asObj.sessionCreated === true || asObj.SessionCreated === true,
+      robot_exit_code: asObj.robotExitCode ?? asObj.RobotExitCode ?? null,
+      meaningful_actions: Number(asObj.meaningfulActions ?? asObj.MeaningfulActions ?? 0),
+      meaningful_assertions: Number(asObj.meaningfulAssertions ?? asObj.MeaningfulAssertions ?? 0),
+      status: asObj.status || asObj.Status || null,
+      runtime_proof_session_id: asObj.runtimeProofSessionId || asObj.RuntimeProofSessionId || null,
+      runtime_proof_verified_at: asObj.runtimeProofVerifiedAt || asObj.RuntimeProofVerifiedAt || null,
+      started_at: asObj.startedAt || asObj.StartedAt || null,
+      finished_at: asObj.finishedAt || asObj.FinishedAt || null,
+    };
+    parts.push({
+      type: "robot_execution_proof",
+      contentType: "application/json",
+      bytes: Buffer.from(JSON.stringify(proof), "utf8"),
+      filename: `robot-proof-${Date.now()}.json`,
+    });
   }
 
   return parts;
@@ -272,6 +327,7 @@ function isTerminalStatus(status) {
     COMMAND_STATES.TIMED_OUT,
     COMMAND_STATES.CANCELLED,
     COMMAND_STATES.REJECTED,
+    COMMAND_STATES.EXPIRED,
     COMMAND_STATES.EVIDENCE_FAILED,
   ].includes(status);
 }

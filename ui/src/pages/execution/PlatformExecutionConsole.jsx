@@ -15,7 +15,13 @@ const DEFAULT_CAPABILITIES = {
   EMBEDDED: "can,embedded_generic",
 };
 const DEFAULT_CONFIGURATION = {
-  WINDOWS: { interactive_session_required: true },
+  WINDOWS: {
+    transport: "OUTBOUND_AGENT",
+    interactive_session_required: true,
+    interactive_session_id: "",
+    application_profile_id: "",
+    auto_recover_runtime: true,
+  },
   LINUX: { desktop_required: false },
   ANDROID: { device_id: "" },
   EMBEDDED: { protocol: "can", interface_reference: "" },
@@ -77,8 +83,8 @@ export default function PlatformExecutionConsole() {
   const [targetForm, setTargetForm] = useState({
     name: "",
     platform: "WINDOWS",
-    endpoint: "https://",
-    credential_reference: "CYFAST_TARGET_TOKEN",
+    endpoint: "outbound://windows-agent",
+    credential_reference: "FIRST_PARTY_AGENT_IDENTITY",
     capabilities: DEFAULT_CAPABILITIES.WINDOWS,
     configuration: JSON.stringify(DEFAULT_CONFIGURATION.WINDOWS, null, 2),
   });
@@ -483,6 +489,8 @@ export default function PlatformExecutionConsole() {
                     setTargetForm({
                       ...targetForm,
                       platform,
+                      endpoint: platform === "WINDOWS" ? "outbound://windows-agent" : "https://",
+                      credential_reference: platform === "WINDOWS" ? "FIRST_PARTY_AGENT_IDENTITY" : "CYFAST_TARGET_TOKEN",
                       capabilities: DEFAULT_CAPABILITIES[platform],
                       configuration: JSON.stringify(DEFAULT_CONFIGURATION[platform], null, 2),
                     });
@@ -490,8 +498,8 @@ export default function PlatformExecutionConsole() {
                     {PLATFORMS.map((platform) => <option key={platform}>{platform}</option>)}
                   </select>
                 </label>
-                <label className="cyfast-span-two">HTTPS endpoint<input required value={targetForm.endpoint} onChange={(event) => setTargetForm({ ...targetForm, endpoint: event.target.value })} /></label>
-                <label>Credential environment reference<input required value={targetForm.credential_reference} onChange={(event) => setTargetForm({ ...targetForm, credential_reference: event.target.value })} /></label>
+                <label className="cyfast-span-two">{targetForm.platform === "WINDOWS" ? "Agent route (outbound only)" : "HTTPS endpoint"}<input required readOnly={targetForm.platform === "WINDOWS"} value={targetForm.endpoint} onChange={(event) => setTargetForm({ ...targetForm, endpoint: event.target.value })} /></label>
+                <label>{targetForm.platform === "WINDOWS" ? "Machine identity reference" : "Credential environment reference"}<input required value={targetForm.credential_reference} onChange={(event) => setTargetForm({ ...targetForm, credential_reference: event.target.value })} /></label>
                 <label>Capabilities<input required value={targetForm.capabilities} onChange={(event) => setTargetForm({ ...targetForm, capabilities: event.target.value })} /></label>
                 <label className="cyfast-span-two">Configuration JSON<textarea rows="5" value={targetForm.configuration} onChange={(event) => setTargetForm({ ...targetForm, configuration: event.target.value })} /></label>
                 <div className="cyfast-form-actions cyfast-span-two"><button className="cyfast-button" type="submit" disabled={loading}>Save target</button></div>
@@ -504,7 +512,7 @@ export default function PlatformExecutionConsole() {
                     <div><strong>{target.name}</strong><small>{target.platform}</small></div>
                     <span className={statusClass(target.status)}>{target.status}</span>
                   </div>
-                  <p>{target.endpoint}</p>
+                  <p>{target.configuration?.transport === "OUTBOUND_AGENT" ? "Outbound first-party Windows Agent" : target.endpoint}</p>
                   <small>{(target.capabilities || []).join(" · ")}</small>
                   <div className="cyfast-actions">
                     <button type="button" className="cyfast-link-button" onClick={() => checkTarget(target)}>Check readiness</button>

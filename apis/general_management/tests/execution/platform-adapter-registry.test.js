@@ -5,9 +5,15 @@ const assert = require("node:assert/strict");
 const {
   PlatformAdapterRegistry,
   HttpPlatformAdapter,
+  RoutedPlatformAdapter,
   validateEndpoint,
   validateExecutionRequest,
 } = require("../../services/execution/platform-adapter-registry");
+const {
+  WindowsOutboundPlatformAdapter,
+  normalizeRobotResult,
+  toRobotPackage,
+} = require("../../services/execution/windows-outbound-platform-adapter");
 
 function target(platform, overrides = {}) {
   const values = {
@@ -84,3 +90,80 @@ test("adapter validates each platform before transport is called", async () => {
   );
   assert.equal(calls, 0);
 });
+
+test("Windows adapter routes outbound targets without accepting a public agent endpoint", async () => {
+  const calls = [];
+  const direct = { assertTarget() { calls.push("direct-assert"); }, check() { calls.push("direct-check"); } };
+  const outbound = { assertTarget() { calls.push("outbound-assert"); }, check() { calls.push("outbound-check"); } };
+  const adapter = new RoutedPlatformAdapter("WINDOWS", direct, outbound);
+  const outboundTarget = { configuration: { transport: "OUTBOUND_AGENT" } };
+  adapter.assertTarget(outboundTarget);
+  await adapter.check(outboundTarget);
+  assert.deepEqual(calls, ["outbound-assert", "outbound-check"]);
+});
+
+test("first-party Windows targets require an application-bound session and reject public ports", () => {
+  const adapter = new WindowsOutboundPlatformAdapter({
+    sessions: {}, model() {}, publish() {}, sleep: async () => {},
+  });
+  const base = {
+    endpoint: "outbound://windows-agent",
+    configuration: {
+      transport: "OUTBOUND_AGENT",
+      interactive_session_id: "session-1",
+      application_profile_id: "profile-1",
+    },
+  };
+  assert.doesNotThrow(() => adapter.assertTarget(base));
+  assert.throws(
+    () => adapter.assertTarget({ ...base, endpoint: "https://desktop.example.test:4723" }),
+    /must not expose an agent HTTP endpoint/,
+  );
+  assert.throws(
+    () => adapter.assertTarget({ ...base, configuration: { ...base.configuration, application_profile_id: "" } }),
+    /application_profile_id/,
+  );
+});
+
+test("outbound Windows package and proof normalization preserve deterministic evidence", () => {
+  const packageValue = toRobotPackage({
+    execution_id: "run-1",
+    timeout_seconds: 60,
+    runtime: { environment_references: { PASSWORD: "CYFAST_HMS_PASSWORD" } },
+    package: {
+      suite_path: "suite.robot",
+      files: [{ path: "suite.robot", content_base64: "YWJj", sha256: "hash" }],
+    },
+  });
+  assert.equal(packageValue.executionId, "run-1");
+  assert.equal(packageValue.files[0].contentBase64, "YWJj");
+  assert.equal(packageValue.environmentReferences.PASSWORD, "CYFAST_HMS_PASSWORD");
+
+  const value = Buffer.from("<robot/>");
+  const result = normalizeRobotResult({
+    Status: "PASSED",
+    RealExecution: true,
+    Simulated: false,
+    DesktopExecution: true,
+    SessionCreated: true,
+    RobotExitCode: 0,
+    MeaningfulActions: 1,
+    MeaningfulAssertions: 1,
+    RuntimeProofSessionId: "session-1",
+    Artifacts: [{
+      Type: "ROBOT_OUTPUT_XML",
+      FileName: "output.xml",
+      ContentType: "application/xml",
+      Size: value.length,
+      Sha256: cryptoHash(value),
+      ContentBase64: value.toString("base64"),
+    }],
+  });
+  assert.equal(result.real_execution, true);
+  assert.equal(result.artifacts[0].type, "output_xml");
+  assert.ok(result.artifacts.some((artifact) => artifact.type === "runtime_proof"));
+});
+
+function cryptoHash(value) {
+  return require("crypto").createHash("sha256").update(value).digest("hex");
+}

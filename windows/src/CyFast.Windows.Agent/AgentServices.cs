@@ -328,6 +328,16 @@ public sealed class GatewayConnection(
                 if (!message.TryGetProperty("type", out var type) || type.GetString() != "command") continue;
 
                 var command = ParseCommand(message.GetProperty("command"));
+                await SendAsync(socket, new
+                {
+                    type = "command_ack",
+                    command_ack = new
+                    {
+                        execution_command_id = command.MessageId,
+                        correlation_id = command.CorrelationId,
+                        acknowledged_at = DateTimeOffset.UtcNow
+                    }
+                }, cancellationToken).ConfigureAwait(false);
                 var result = await ExecuteAsync(command, cancellationToken).ConfigureAwait(false);
                 try
                 {

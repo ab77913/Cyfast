@@ -5,7 +5,7 @@ const assert = require("node:assert/strict");
 const { createExecutionLifecycle } = require("../../services/execution/execution-lifecycle-service");
 const { RUN_STATES, FAILURE_CLASSES } = require("../../services/execution/execution-contract");
 
-function createHarness({ health = { ready: true, status: "READY" }, result } = {}) {
+function createHarness({ health = { ready: true, status: "READY" }, result, completion } = {}) {
   const target = {
     execution_target_id: "target-1",
     organization_id: 1,
@@ -85,7 +85,7 @@ function createHarness({ health = { ready: true, status: "READY" }, result } = {
     platform: "WINDOWS",
     assertTarget() {},
     async check() { return health; },
-    async execute() { return { execution_id: "external-1", status: "ACCEPTED", ...(result ? { result } : {}) }; },
+    async execute() { return { execution_id: "external-1", status: "ACCEPTED", ...(result ? { result } : {}), ...(completion ? { completion } : {}) }; },
     async cancel() { return { cancelled: true }; },
   };
   const registry = { get() { return adapter; } };
@@ -151,6 +151,21 @@ test("successful real execution becomes PASSED only after proof and evidence", a
   assert.equal(run.meaningful_assertions, 2);
   assert.equal(run.proof_hash.length, 64);
   assert.ok(harness.events.some((event) => event.event_type === "execution.passed.v1"));
+});
+
+test("outbound long-running completion finalizes asynchronously without blocking dispatch", async () => {
+  let resolveCompletion;
+  const completion = new Promise((resolve) => { resolveCompletion = resolve; });
+  const harness = createHarness({ completion });
+  const dispatched = await harness.lifecycle.startRun({
+    execution_target_id: "target-1",
+    test_script_id: 10,
+    idempotency_key: "run-outbound-001",
+  }, actor);
+  assert.equal(dispatched.status, RUN_STATES.RUNNING);
+  resolveCompletion(passResult());
+  await new Promise((resolve) => setImmediate(resolve));
+  assert.equal([...harness.runs.values()][0].status, RUN_STATES.PASSED);
 });
 
 test("target readiness failure becomes BLOCKED instead of fake PASS", async () => {

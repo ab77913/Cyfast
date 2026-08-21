@@ -219,6 +219,9 @@ function normalizeContentInput(input = {}) {
     }
   }
   const itemType = String(input.item_type || "").toUpperCase();
+  if (itemType === "AUTOMATION_PROJECT_PROFILE") {
+    contentJson = validateAutomationProjectProfile(contentJson);
+  }
   const resourceId = String(input.resource_id || "").trim();
   const resourceVersion = String(input.resource_version || "1").trim();
   const title = String(input.title || resourceId).trim();
@@ -248,6 +251,80 @@ function normalizeContentInput(input = {}) {
   };
 }
 
+function validateAutomationProjectProfile(value) {
+  if (!value || typeof value !== "object" || Array.isArray(value)) {
+    throw typedError("AUTOMATION_PROJECT_PROFILE_INVALID", "Automation project profile must be a JSON object", 422);
+  }
+  const projectMode = String(value.project_mode || "").toUpperCase();
+  if (!["NEW", "EXISTING"].includes(projectMode)) {
+    throw typedError("AUTOMATION_PROJECT_MODE_INVALID", "project_mode must be NEW or EXISTING", 422);
+  }
+  const framework = String(value.framework || "ROBOT_FRAMEWORK").toUpperCase();
+  if (framework !== "ROBOT_FRAMEWORK") {
+    throw typedError("AUTOMATION_PROJECT_FRAMEWORK_INVALID", "Only ROBOT_FRAMEWORK project profiles are supported", 422);
+  }
+  const files = Array.isArray(value.files) ? value.files : [];
+  if (files.length > 128 || (projectMode === "EXISTING" && !files.length)) {
+    throw typedError(
+      "AUTOMATION_PROJECT_FILES_INVALID",
+      projectMode === "EXISTING" ? "EXISTING projects require 1-128 immutable files" : "Project profiles may contain at most 128 files",
+      422,
+    );
+  }
+  const seen = new Set();
+  let totalBytes = 0;
+  const normalizedFiles = files.map((file, index) => {
+    const filePath = validateAutomationProjectPath(file?.path);
+    if (seen.has(filePath.toLowerCase())) {
+      throw typedError("AUTOMATION_PROJECT_PATH_DUPLICATE", `Duplicate project path: ${filePath}`, 422);
+    }
+    seen.add(filePath.toLowerCase());
+    const content = String(file?.content || "");
+    if (!content.trim() || Buffer.byteLength(content, "utf8") > 225_280) {
+      throw typedError("AUTOMATION_PROJECT_FILE_CONTENT_INVALID", `Project file ${index + 1} requires bounded UTF-8 content`, 422);
+    }
+    const contentHash = sha256(content);
+    totalBytes += Buffer.byteLength(content, "utf8");
+    if (file.sha256 && String(file.sha256).toLowerCase() !== contentHash) {
+      throw typedError("AUTOMATION_PROJECT_FILE_HASH_MISMATCH", `Project file checksum mismatch: ${filePath}`, 422);
+    }
+    return {
+      path: filePath,
+      kind: String(file.kind || "PROJECT_FILE").toUpperCase(),
+      content,
+      sha256: contentHash,
+    };
+  });
+  if (totalBytes > 225_280) {
+    throw typedError("AUTOMATION_PROJECT_SIZE_LIMIT_EXCEEDED", `Project snapshot is ${totalBytes} bytes; maximum is 225280`, 422);
+  }
+  return {
+    project_mode: projectMode,
+    framework,
+    root_path: ".",
+    files: normalizedFiles,
+    imports: Array.isArray(value.imports) ? value.imports.map(String) : [],
+    libraries: Array.isArray(value.libraries) ? value.libraries.map(String) : [],
+    keywords: Array.isArray(value.keywords) ? value.keywords.map(String) : [],
+    conventions: redactSecrets(value.conventions || {}),
+  };
+}
+
+function validateAutomationProjectPath(value) {
+  const normalized = String(value || "");
+  if (!normalized || normalized.length > 512 || normalized.includes("\\") || normalized.startsWith("/") || normalized.startsWith("~")) {
+    throw typedError("AUTOMATION_PROJECT_PATH_INVALID", `Unsafe automation project path: ${normalized || "<empty>"}`, 422);
+  }
+  const parts = normalized.split("/");
+  if (parts.some((part) => !part || part === "." || part === ".." || !/^[A-Za-z0-9._@+-]{1,128}$/.test(part))) {
+    throw typedError("AUTOMATION_PROJECT_PATH_INVALID", `Unsafe automation project path: ${normalized}`, 422);
+  }
+  if (!/[.](?:robot|resource|py|json|ya?ml|txt|csv|xml)$/i.test(normalized)) {
+    throw typedError("AUTOMATION_PROJECT_FILE_TYPE_INVALID", `Unsupported automation project file: ${normalized}`, 422);
+  }
+  return normalized;
+}
+
 module.exports = {
   CONTENT_FORMATS,
   createContentItem,
@@ -257,4 +334,5 @@ module.exports = {
   listContents,
   markValidated,
   normalizeContentInput,
+  validateAutomationProjectProfile,
 };

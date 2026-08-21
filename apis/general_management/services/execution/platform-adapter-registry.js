@@ -125,9 +125,36 @@ function createDefaultRegistry({ transport, tokenResolver, allowInsecureLoopback
   }
   const registry = new PlatformAdapterRegistry();
   for (const platform of Object.values(PLATFORMS)) {
-    registry.register(new HttpPlatformAdapter({ platform, transport, tokenResolver, allowInsecureLoopback, timeoutMs }));
+    const http = new HttpPlatformAdapter({ platform, transport, tokenResolver, allowInsecureLoopback, timeoutMs });
+    if (platform === PLATFORMS.WINDOWS) {
+      const { WindowsOutboundPlatformAdapter } = require("./windows-outbound-platform-adapter");
+      registry.register(new RoutedPlatformAdapter(platform, http, new WindowsOutboundPlatformAdapter()));
+    } else {
+      registry.register(http);
+    }
   }
   return registry;
+}
+
+class RoutedPlatformAdapter {
+  constructor(platform, httpAdapter, outboundAdapter) {
+    this.platform = platform;
+    this.httpAdapter = httpAdapter;
+    this.outboundAdapter = outboundAdapter;
+  }
+
+  selected(target) {
+    return String(target?.configuration?.transport || "").toUpperCase() === "OUTBOUND_AGENT"
+      ? this.outboundAdapter
+      : this.httpAdapter;
+  }
+
+  assertTarget(target) { return this.selected(target).assertTarget(target); }
+  check(target, context) { return this.selected(target).check(target, context); }
+  execute(target, request) { return this.selected(target).execute(target, request); }
+  cancel(target, externalExecutionId, context) {
+    return this.selected(target).cancel(target, externalExecutionId, context);
+  }
 }
 
 function validateEndpoint(value, allowInsecureLoopback) {
@@ -170,6 +197,7 @@ module.exports = {
   FIXED_PATHS,
   PlatformAdapterRegistry,
   HttpPlatformAdapter,
+  RoutedPlatformAdapter,
   createDefaultRegistry,
   validateEndpoint,
   validateExecutionRequest,

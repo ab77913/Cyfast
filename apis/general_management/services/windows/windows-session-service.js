@@ -29,19 +29,22 @@ async function session(id, organizationId) {
   return getById("InteractiveSession", "interactive_session_id", id, organizationId);
 }
 
-async function issueCommand(sessionValue, type, payload, actor, idempotencyKey) {
+async function issueCommand(sessionValue, type, payload, actor, idempotencyKey, context = {}) {
   const node = await getById("WindowsNode", "windows_node_id", sessionValue.windows_node_id, sessionValue.organization_id);
   const base = validateCommandEnvelope({
     execution_command_id: crypto.randomUUID(),
     interactive_session_id: sessionValue.interactive_session_id,
     agent_id: node.agent_id,
     organization_id: sessionValue.organization_id,
+    project_id: context.project_id || payload.project_id || null,
+    execution_id: context.execution_id || payload.execution_id || payload.executionId || null,
     command_type: type,
     payload,
     idempotency_key: idempotencyKey || crypto.randomUUID(),
     correlation_id: crypto.randomUUID(),
     expires_at: new Date(Date.now() + 5 * 60e3).toISOString(),
     status: COMMAND_STATES.QUEUED,
+    attempt_count: 0,
   });
   const command = await db.sequelize.transaction(async (transaction) => {
     const existing = await model("ExecutionCommand").findOne({
@@ -78,7 +81,7 @@ async function commandWithManifest(commandId, organizationId) {
     command,
     manifest,
     evidence_ready: manifest?.status === "EVIDENCE_COMPLETE" || (manifest && !(manifest.required_evidence_types || []).length),
-    terminal: ["COMPLETED", "FAILED", "TIMED_OUT", "CANCELLED", "REJECTED", "EVIDENCE_FAILED"].includes(command.status),
+    terminal: ["COMPLETED", "FAILED", "TIMED_OUT", "CANCELLED", "REJECTED", "EXPIRED", "EVIDENCE_FAILED"].includes(command.status),
   };
 }
 

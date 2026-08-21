@@ -124,12 +124,24 @@ test("W1 migration does not seed fixed organization permissions", () => {
   assert.doesNotMatch(migration, /INSERT\s+INTO\s+(?:permission|role_permission)[\s\S]*?\b(?:organization_id|role_id)\s*,?\s*1/i);
 });
 
+test("durable Windows commands persist execution correlation, attempts, and replay-safe results", () => {
+  const migration = fs.readFileSync(
+    path.resolve(__dirname, "../../../../databases/MYSQL/cyfast2/2.0.0/26_windows_durable_command_extensions.sql"),
+    "utf8"
+  );
+  assert.match(migration, /project_id INT NULL/);
+  assert.match(migration, /execution_id VARCHAR\(64\) NULL/);
+  assert.match(migration, /attempt_count INT NOT NULL DEFAULT 0/);
+  assert.match(migration, /result JSON NULL/);
+  assert.match(migration, /UNIQUE KEY uq_ecr_command_org/);
+});
+
 test("W1 stable stack does not replay schema migrations already present in 01_schema", () => {
   const runner = fs.readFileSync(
     path.resolve(__dirname, "../../../../scripts/windows/start-w1-stack.ps1"),
     "utf8"
   );
-  assert.match(runner, /\^\(08\|09\|10\)_/);
+  assert.match(runner, /\^\(08\|09\|10\|26\)_/);
   assert.doesNotMatch(runner, /\^\(04\|05\|06\|07\|08\|09\|10\)_/);
 });
 
@@ -242,6 +254,13 @@ test("UI actions map to windows command types", () => {
   assert.equal(mapActionToCommandType("actions", { action: "select" }), "windows.select_element");
   assert.equal(mapActionToCommandType("screenshots", {}), "windows.capture_screenshot");
   assert.equal(mapActionToCommandType("end", {}), "windows.end_session");
+  assert.equal(mapActionToCommandType("check_runtime", {}), "windows.check_runtime");
+  assert.equal(mapActionToCommandType("recover_runtime", {}), "windows.recover_runtime");
+  assert.equal(mapActionToCommandType("validate_robot_package", {}), "windows.validate_robot_package");
+  assert.equal(mapActionToCommandType("start_robot_job", {}), "windows.start_robot_job");
+  assert.equal(mapActionToCommandType("get_robot_job_status", {}), "windows.get_robot_job_status");
+  assert.equal(mapActionToCommandType("cancel_robot_job", {}), "windows.cancel_robot_job");
+  assert.equal(mapActionToCommandType("collect_robot_job_result", {}), "windows.collect_robot_job_result");
 });
 
 test("payload hash is deterministic", () => {
@@ -308,8 +327,42 @@ test("launch and end_session mandatory evidence extractors are present", () => {
   assert.ok(extractEvidenceParts("windows.end_session", { Payload: { ended: true } }).length >= 2);
 });
 
+test("Robot result collection requires and extracts centrally stored proof artifacts", () => {
+  const { extractEvidenceParts, requiredEvidenceFor } = require("../../services/windows/windows-command-lifecycle");
+  const artifact = (type, fileName, value) => ({
+    Type: type,
+    FileName: fileName,
+    ContentType: "text/plain",
+    ContentBase64: Buffer.from(value).toString("base64"),
+    Sha256: require("../../services/windows/windows-evidence-service").hash(Buffer.from(value)),
+  });
+  const required = requiredEvidenceFor("windows.collect_robot_job_result");
+  assert.ok(required.includes("robot_output_xml"));
+  assert.ok(required.includes("robot_execution_proof"));
+  const parts = extractEvidenceParts("windows.collect_robot_job_result", {
+    Payload: {
+      RealExecution: true,
+      Simulated: false,
+      DesktopExecution: true,
+      SessionCreated: true,
+      RobotExitCode: 0,
+      MeaningfulActions: 1,
+      MeaningfulAssertions: 1,
+      Artifacts: [
+        artifact("ROBOT_OUTPUT_XML", "output.xml", "output"),
+        artifact("ROBOT_LOG_HTML", "log.html", "log"),
+        artifact("ROBOT_REPORT_HTML", "report.html", "report"),
+        artifact("STDOUT", "stdout.log", "stdout"),
+        artifact("STDERR", "stderr.log", "stderr"),
+      ],
+    },
+  });
+  assert.deepEqual(new Set(parts.map((part) => part.type)), new Set(required));
+});
+
 test("completed is terminal and evidence-pending is not", () => {
   const { isTerminalStatus, COMMAND_STATES } = require("../../services/windows/windows-command-lifecycle");
   assert.equal(isTerminalStatus(COMMAND_STATES.EVIDENCE_FAILED), true);
+  assert.equal(isTerminalStatus(COMMAND_STATES.EXPIRED), true);
   assert.equal(isTerminalStatus(COMMAND_STATES.EVIDENCE_UPLOADING), false);
 });

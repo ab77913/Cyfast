@@ -209,6 +209,7 @@ async function registerAgentWebSocket() {
             const body = { agent_id: agentId, organization_id: identity.organization_id };
             if (event.type === "heartbeat") body.health = { status: event.status || "ONLINE", details: event.details };
             else if (event.type === "capabilities") body.capabilities = event.capabilities || [];
+            else if (event.type === "command_ack") body.command_ack = event.command_ack;
             else if (event.type === "command_result") body.command_result = event.command_result;
             else return;
             await axios.post(`${config.gmUrl}/internal/windows/agents/update`, body, { headers: internalHeaders() });

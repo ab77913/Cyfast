@@ -15,6 +15,13 @@ const ALLOWED_COMMANDS = new Set([
   "windows.set_element_value",
   "windows.select_element",
   "windows.close_application",
+  "windows.check_runtime",
+  "windows.recover_runtime",
+  "windows.validate_robot_package",
+  "windows.start_robot_job",
+  "windows.get_robot_job_status",
+  "windows.cancel_robot_job",
+  "windows.collect_robot_job_result",
 ]);
 
 const FORBIDDEN_COMMANDS = new Set([
@@ -41,6 +48,13 @@ const ACTION_TO_COMMAND = {
   set_value: "windows.set_element_value",
   select: "windows.select_element",
   close: "windows.close_application",
+  check_runtime: "windows.check_runtime",
+  recover_runtime: "windows.recover_runtime",
+  validate_robot_package: "windows.validate_robot_package",
+  start_robot_job: "windows.start_robot_job",
+  get_robot_job_status: "windows.get_robot_job_status",
+  cancel_robot_job: "windows.cancel_robot_job",
+  collect_robot_job_result: "windows.collect_robot_job_result",
 };
 
 function canonicalize(value) {

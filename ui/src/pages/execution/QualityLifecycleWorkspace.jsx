@@ -44,7 +44,7 @@ const GENERATED_TYPE = {
   LOGICAL_STEPS_GENERATED: "LOGICAL_STEP",
   SCRIPT_GENERATED: "TEST_SCRIPT",
 };
-const BINDING_TYPES = ["APPLICATION", "DEVICE", "LOCATOR_SET", "TARGET_PROFILE"];
+const BINDING_TYPES = ["APPLICATION", "DEVICE", "LOCATOR_SET", "TARGET_PROFILE", "AUTOMATION_PROJECT_PROFILE"];
 
 function statusClass(status) {
   return `cyfast-status cyfast-status-${String(status || "unknown").toLowerCase()}`;
@@ -64,10 +64,43 @@ function safeJson(value) {
   }
 }
 
+function bindingTemplate(type, projectMode = "NEW") {
+  if (type !== "AUTOMATION_PROJECT_PROFILE") return "{}";
+  return safeJson({
+    project_mode: projectMode,
+    framework: "ROBOT_FRAMEWORK",
+    root_path: ".",
+    files: [],
+    imports: [],
+    libraries: [],
+    keywords: [],
+    conventions: { suite_directory: "tests", resource_directory: "resources" },
+  });
+}
+
 async function fileSha256(file) {
   const bytes = await file.arrayBuffer();
   const digest = await crypto.subtle.digest("SHA-256", bytes);
   return [...new Uint8Array(digest)].map((value) => value.toString(16).padStart(2, "0")).join("");
+}
+
+async function projectFilesFromSelection(fileList) {
+  const files = [...(fileList || [])];
+  if (!files.length) return [];
+  if (files.length > 128) throw new Error("Automation projects may contain at most 128 files.");
+  const allowed = /[.](?:robot|resource|py|json|ya?ml|txt|csv|xml)$/i;
+  let totalBytes = 0;
+  const output = [];
+  for (const file of files) {
+    const relative = String(file.webkitRelativePath || file.name).split("/").slice(1).join("/") || file.name;
+    if (!allowed.test(relative) || relative.includes("\\") || relative.split("/").some((part) => !part || part === "." || part === "..")) {
+      throw new Error(`Unsupported or unsafe automation-project file: ${relative}`);
+    }
+    totalBytes += file.size;
+    if (totalBytes > 225280) throw new Error("Automation project snapshot exceeds the 225,280-byte package limit.");
+    output.push({ path: relative, kind: "PROJECT_FILE", content: await file.text() });
+  }
+  return output;
 }
 
 function ContentPreview({ content, onClose }) {
@@ -117,6 +150,7 @@ export default function QualityLifecycleWorkspace({ projectId, targets = [], onE
     source_document_filename: "",
     source_document_content_type: "application/octet-stream",
     platform: "WINDOWS",
+    project_mode: "NEW",
   });
   const [bindingForm, setBindingForm] = useState({
     item_type: "APPLICATION",
@@ -213,6 +247,7 @@ export default function QualityLifecycleWorkspace({ projectId, targets = [], onE
         source_document_version: createForm.source_document_version,
         generation_policy: {
           selected_platform: createForm.platform,
+          project_mode: createForm.project_mode,
           source_document_filename: createForm.source_document_filename,
           source_document_content_type: createForm.source_document_content_type,
           require_source_anchor: true,
@@ -245,6 +280,34 @@ export default function QualityLifecycleWorkspace({ projectId, targets = [], onE
         source_document_filename: file.name,
         source_document_content_type: file.type || "application/octet-stream",
       }));
+    } catch (value) {
+      reportError(value);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function loadAutomationProject(fileList) {
+    setError("");
+    setLoading(true);
+    try {
+      const files = await projectFilesFromSelection(fileList);
+      const profile = {
+        project_mode: "EXISTING",
+        framework: "ROBOT_FRAMEWORK",
+        root_path: ".",
+        files,
+        imports: [],
+        libraries: [],
+        keywords: [],
+        conventions: { suite_directory: "tests", resource_directory: "resources" },
+      };
+      setBindingForm((current) => ({
+        ...current,
+        item_type: "AUTOMATION_PROJECT_PROFILE",
+        content: safeJson(profile),
+      }));
+      setNotice(`${files.length} automation-project files were loaded for immutable server validation.`);
     } catch (value) {
       reportError(value);
     } finally {
@@ -396,6 +459,7 @@ export default function QualityLifecycleWorkspace({ projectId, targets = [], onE
             <label>Uploaded file ID<input required value={createForm.source_document_file_id} onChange={(event) => setCreateForm({ ...createForm, source_document_file_id: event.target.value })} /></label>
             <label>Document version<input required value={createForm.source_document_version} onChange={(event) => setCreateForm({ ...createForm, source_document_version: event.target.value })} /></label>
             <label>Target platform<select value={createForm.platform} onChange={(event) => setCreateForm({ ...createForm, platform: event.target.value })}><option>WINDOWS</option><option>LINUX</option><option>ANDROID</option><option>EMBEDDED</option></select></label>
+            <label>Automation project mode<select value={createForm.project_mode} onChange={(event) => setCreateForm({ ...createForm, project_mode: event.target.value })}><option>NEW</option><option>EXISTING</option></select></label>
             <label>Verify local source<input type="file" onChange={(event) => computeHash(event.target.files?.[0])} /></label>
             <label>Filename<input required value={createForm.source_document_filename} onChange={(event) => setCreateForm({ ...createForm, source_document_filename: event.target.value })} /></label>
             <label>Content type<input required value={createForm.source_document_content_type} onChange={(event) => setCreateForm({ ...createForm, source_document_content_type: event.target.value })} /></label>
@@ -433,6 +497,7 @@ export default function QualityLifecycleWorkspace({ projectId, targets = [], onE
 
           <div className="cyfast-proof-grid">
             <div><span>Platform</span><strong>{selectedPlatform || "—"}</strong></div>
+            <div><span>Project mode</span><strong>{selected.generation_policy?.project_mode || "—"}</strong></div>
             <div><span>Document</span><strong>{selected.source_document_file_id}</strong></div>
             <div><span>Traceability</span><strong>{selected.traceability_complete ? "Complete" : "Incomplete"}</strong></div>
             <div><span>Execution ready</span><strong>{selected.ready_for_execution ? "Yes" : "No"}</strong></div>
@@ -472,17 +537,18 @@ export default function QualityLifecycleWorkspace({ projectId, targets = [], onE
 
           <div className="cyfast-panel-heading cyfast-section-heading">
             <div><h4>Versioned lifecycle content</h4><p>Every item retains source, model, prompt, hash and approval.</p></div>
-            <button type="button" className="cyfast-button cyfast-button-secondary" onClick={() => setShowBinding((value) => !value)}>{showBinding ? "Close binding" : "Add application/device/locator binding"}</button>
+            <button type="button" className="cyfast-button cyfast-button-secondary" onClick={() => setShowBinding((value) => !value)}>{showBinding ? "Close binding" : "Add execution or automation-project profile"}</button>
           </div>
 
           {showBinding ? (
             <form className="cyfast-form-grid" onSubmit={addBinding}>
-              <label>Binding type<select value={bindingForm.item_type} onChange={(event) => setBindingForm({ ...bindingForm, item_type: event.target.value })}>{BINDING_TYPES.map((type) => <option key={type}>{type}</option>)}</select></label>
+              <label>Binding type<select value={bindingForm.item_type} onChange={(event) => setBindingForm({ ...bindingForm, item_type: event.target.value, content: bindingTemplate(event.target.value, selected?.generation_policy?.project_mode) })}>{BINDING_TYPES.map((type) => <option key={type}>{type}</option>)}</select></label>
               <label>Resource ID<input required value={bindingForm.resource_id} onChange={(event) => setBindingForm({ ...bindingForm, resource_id: event.target.value })} /></label>
               <label>Version<input required value={bindingForm.resource_version} onChange={(event) => setBindingForm({ ...bindingForm, resource_version: event.target.value })} /></label>
               <label>Title<input required value={bindingForm.title} onChange={(event) => setBindingForm({ ...bindingForm, title: event.target.value })} /></label>
               <label className="cyfast-span-two">Approved source item<select required value={bindingForm.source_item_id} onChange={(event) => setBindingForm({ ...bindingForm, source_item_id: event.target.value })}><option value="">Select source</option>{approvedItems.map((item) => <option key={item.quality_lifecycle_item_id} value={item.quality_lifecycle_item_id}>{item.item_type} · {item.resource_id} · v{item.resource_version}</option>)}</select></label>
               <label className="cyfast-span-two">Binding/profile JSON<textarea rows="8" required value={bindingForm.content} onChange={(event) => setBindingForm({ ...bindingForm, content: event.target.value })} /></label>
+              {bindingForm.item_type === "AUTOMATION_PROJECT_PROFILE" ? <label className="cyfast-span-two">Load existing Robot project directory<input type="file" multiple webkitdirectory="" directory="" onChange={(event) => loadAutomationProject(event.target.files)} /></label> : null}
               <div className="cyfast-form-actions cyfast-span-two"><button type="submit" className="cyfast-button" disabled={loading}>Save pending binding version</button></div>
             </form>
           ) : null}

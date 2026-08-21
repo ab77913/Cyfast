@@ -69,7 +69,7 @@ async function bootstrapPermissions(request, reply) {
 async function agentUpdate(request, reply) {
   try {
     assertInternal(request);
-    const { agent_id, organization_id, capabilities, health, command_result } = request.body;
+    const { agent_id, organization_id, capabilities, health, command_ack, command_result } = request.body;
     if (capabilities) {
       await model("AgentCapability").destroy({ where: { agent_id } });
       await model("AgentCapability").bulkCreate(
@@ -94,20 +94,49 @@ async function agentUpdate(request, reply) {
         { where: { agent_id, organization_id } }
       );
     }
+    if (command_ack) {
+      const commandId = command_ack.execution_command_id || command_ack.request_id;
+      if (!commandId) {
+        throw Object.assign(new Error("Command acknowledgement correlation id is required"), {
+          code: "COMMAND_ACK_INVALID",
+          statusCode: 400,
+        });
+      }
+      await model("ExecutionCommand").update(
+        { status: COMMAND_STATES.ACKNOWLEDGED },
+        { where: { execution_command_id: commandId, organization_id, agent_id } }
+      );
+    }
     if (command_result) {
-      await model("ExecutionCommandResult").create({
-        execution_command_id: command_result.execution_command_id,
-        organization_id,
-        status: command_result.status || (command_result.result?.Success ? "RESULT_RECEIVED" : "FAILED"),
-        result: command_result.result || command_result,
-        received_at: new Date(),
+      const resultPayload = command_result.result || command_result;
+      const commandId = command_result.execution_command_id || resultPayload.RequestId || resultPayload.requestId;
+      if (!commandId) {
+        throw Object.assign(new Error("Command result correlation id is required"), {
+          code: "COMMAND_RESULT_INVALID",
+          statusCode: 400,
+        });
+      }
+      await model("ExecutionCommandResult").findOrCreate({
+        where: { execution_command_id: commandId, organization_id },
+        defaults: {
+          execution_command_id: commandId,
+          organization_id,
+          status: command_result.status || (resultPayload.Success ? "RESULT_RECEIVED" : "FAILED"),
+          result: resultPayload,
+          received_at: new Date(),
+          created_by: agent_id,
+        },
       });
-      if (command_result.execution_command_id) {
+      await model("ExecutionCommand").update({
+        result: resultPayload,
+        result_received_at: new Date(),
+      }, { where: { execution_command_id: commandId, organization_id } });
+      if (commandId) {
         const success =
-          command_result.result?.Success !== false &&
+          resultPayload.Success !== false &&
           String(command_result.status || "").toUpperCase() !== "FAILED";
-        await reconcileCommandCompletion(command_result.execution_command_id, organization_id, {
-          resultPayload: command_result.result || command_result,
+        await reconcileCommandCompletion(commandId, organization_id, {
+          resultPayload,
           success,
           actor: agent_id,
         });

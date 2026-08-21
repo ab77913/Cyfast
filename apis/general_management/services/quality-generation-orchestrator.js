@@ -50,6 +50,7 @@ const SOURCE_TYPES_BY_STAGE = Object.freeze({
     "DEVICE",
     "LOCATOR_SET",
     "TARGET_PROFILE",
+    "AUTOMATION_PROJECT_PROFILE",
   ],
 });
 
@@ -89,7 +90,7 @@ async function generateNextStage(lifecycleId, input, actor) {
     : await loadApprovedSources(lifecycle, requestedStage, actor);
   assertStageBindings(requestedStage, selectedPlatform, source.items);
 
-  const response = await callQualityGeneration({
+  const generatedResponse = await callQualityGeneration({
     stage: requestedStage,
     platform: selectedPlatform || null,
     source_items: source.items,
@@ -104,9 +105,12 @@ async function generateNextStage(lifecycleId, input, actor) {
     }),
     generation_policy: generationPolicy,
   }, lifecycle);
-  if (response.stage !== requestedStage || !Array.isArray(response.items) || !response.items.length) {
+  if (generatedResponse.stage !== requestedStage || !Array.isArray(generatedResponse.items) || !generatedResponse.items.length) {
     throw typedError("QUALITY_GENERATION_RESPONSE_INVALID", "AI Engine returned no valid generated items", 502);
   }
+  const response = requestedStage === "TEST_SCRIPTS"
+    ? materializeProjectPackages(generatedResponse, source.items, generationPolicy.project_mode)
+    : generatedResponse;
 
   const sourceMap = new Map(source.persistedItems.map((item) => [String(item.resource_id), item]));
   const persisted = await contentService.createGeneratedItems(lifecycleId, response, sourceMap, actor);
@@ -373,6 +377,7 @@ function assertStageBindings(stage, platform, items) {
   if (!types.has("LOGICAL_STEP")) errors.push("Approved LOGICAL_STEP content is required");
   if (!types.has("TEST_CASE")) errors.push("Approved TEST_CASE content is required");
   if (!types.has("TEST_DATA")) errors.push("Approved TEST_DATA content is required");
+  if (!types.has("AUTOMATION_PROJECT_PROFILE")) errors.push("Approved AUTOMATION_PROJECT_PROFILE is required");
   if (platform === "WINDOWS") {
     if (!types.has("APPLICATION")) errors.push("Approved APPLICATION profile is required for Windows");
     if (!types.has("LOCATOR_SET")) errors.push("Approved LOCATOR_SET is required for Windows");
@@ -387,6 +392,136 @@ function assertStageBindings(stage, platform, items) {
     if (!types.has("TARGET_PROFILE")) errors.push("Approved TARGET_PROFILE is required for embedded execution");
   }
   if (errors.length) throw typedError("SCRIPT_BINDINGS_INCOMPLETE", errors.join(" | "), 422);
+}
+
+function materializeProjectPackages(generation, sourceItems, expectedProjectMode = null) {
+  const profiles = sourceItems.filter((item) => item.item_type === "AUTOMATION_PROJECT_PROFILE");
+  if (profiles.length !== 1) {
+    throw typedError(
+      "AUTOMATION_PROJECT_PROFILE_REQUIRED",
+      "Exactly one approved AUTOMATION_PROJECT_PROFILE is required for script generation",
+      422,
+    );
+  }
+  const profileItem = profiles[0];
+  const profile = profileItem.content || {};
+  const projectMode = String(profile.project_mode || "").toUpperCase();
+  if (!["NEW", "EXISTING"].includes(projectMode)) {
+    throw typedError("AUTOMATION_PROJECT_MODE_INVALID", "Automation project profile project_mode must be NEW or EXISTING", 422);
+  }
+  const policyMode = String(expectedProjectMode || "").toUpperCase();
+  if (policyMode && policyMode !== projectMode) {
+    throw typedError(
+      "AUTOMATION_PROJECT_POLICY_MISMATCH",
+      `Lifecycle project_mode ${policyMode} does not match approved profile ${projectMode}`,
+      422,
+    );
+  }
+  const existingFiles = new Map();
+  for (const file of Array.isArray(profile.files) ? profile.files : []) {
+    const filePath = validateProjectPath(file?.path);
+    if (existingFiles.has(filePath.toLowerCase())) {
+      throw typedError("AUTOMATION_PROJECT_PATH_DUPLICATE", `Duplicate project profile path: ${filePath}`, 422);
+    }
+    const content = String(file?.content || "");
+    if (!content.trim()) {
+      throw typedError("AUTOMATION_PROJECT_FILE_CONTENT_REQUIRED", `Project profile file ${filePath} requires immutable content`, 422);
+    }
+    existingFiles.set(filePath.toLowerCase(), { path: filePath, content });
+  }
+  if (projectMode === "EXISTING" && !existingFiles.size) {
+    throw typedError("AUTOMATION_PROJECT_FILES_REQUIRED", "EXISTING automation projects require a non-empty file inventory", 422);
+  }
+
+  return {
+    ...generation,
+    items: generation.items.map((item) => {
+      if (item.item_type !== "TEST_SCRIPT") return item;
+      const content = { ...(item.content || {}) };
+      const requestedMode = String(content.project_mode || "").toUpperCase();
+      if (requestedMode !== projectMode) {
+        throw typedError(
+          "AUTOMATION_PROJECT_MODE_MISMATCH",
+          `Generated script project_mode ${requestedMode || "<empty>"} does not match approved profile ${projectMode}`,
+          422,
+        );
+      }
+      const suitePath = validateProjectPath(content.suite_path || content.filename, new Set([".robot"]));
+      const operation = String(content.operation || "").toUpperCase();
+      if (!["CREATE", "UPDATE"].includes(operation) || (projectMode === "NEW" && operation !== "CREATE")) {
+        throw typedError("AUTOMATION_PROJECT_OPERATION_INVALID", `Invalid ${operation || "<empty>"} operation for ${projectMode} project`, 422);
+      }
+      if (projectMode === "EXISTING" && operation === "UPDATE" && !existingFiles.has(suitePath.toLowerCase())) {
+        throw typedError("AUTOMATION_PROJECT_UPDATE_TARGET_MISSING", `UPDATE target is absent from project profile: ${suitePath}`, 422);
+      }
+      const outputFiles = [];
+      const seen = new Set([suitePath.toLowerCase()]);
+      for (const generatedFile of Array.isArray(content.resource_files) ? content.resource_files : []) {
+        const filePath = validateProjectPath(generatedFile?.path);
+        if (seen.has(filePath.toLowerCase())) {
+          throw typedError("AUTOMATION_PROJECT_PATH_DUPLICATE", `Duplicate generated package path: ${filePath}`, 422);
+        }
+        const fileOperation = String(generatedFile?.operation || "CREATE").toUpperCase();
+        if (!["CREATE", "UPDATE"].includes(fileOperation)) {
+          throw typedError("AUTOMATION_PROJECT_OPERATION_INVALID", `Invalid operation for ${filePath}`, 422);
+        }
+        if (fileOperation === "UPDATE" && !existingFiles.has(filePath.toLowerCase())) {
+          throw typedError("AUTOMATION_PROJECT_UPDATE_TARGET_MISSING", `UPDATE target is absent from project profile: ${filePath}`, 422);
+        }
+        seen.add(filePath.toLowerCase());
+        outputFiles.push({
+          path: filePath,
+          content: String(generatedFile.content || ""),
+          source: `AI_${fileOperation}`,
+          operation: fileOperation,
+        });
+      }
+      for (const reusedPath of Array.isArray(content.reused_file_paths) ? content.reused_file_paths : []) {
+        const filePath = validateProjectPath(reusedPath);
+        const existing = existingFiles.get(filePath.toLowerCase());
+        if (!existing) throw typedError("AUTOMATION_PROJECT_REUSE_TARGET_MISSING", `REUSE target is absent from project profile: ${filePath}`, 422);
+        if (seen.has(filePath.toLowerCase())) throw typedError("AUTOMATION_PROJECT_PATH_DUPLICATE", `Duplicate generated package path: ${filePath}`, 422);
+        seen.add(filePath.toLowerCase());
+        outputFiles.push({ ...existing, source: "AUTOMATION_PROJECT_PROFILE", operation: "REUSE" });
+      }
+      if (outputFiles.length + 1 > 128) {
+        throw typedError("AUTOMATION_PROJECT_FILE_LIMIT_EXCEEDED", "Generated package contains more than 128 files", 422);
+      }
+      const packageBytes = Buffer.byteLength(String(content.script || content.content || ""), "utf8")
+        + outputFiles.reduce((total, file) => total + Buffer.byteLength(file.content, "utf8"), 0);
+      if (packageBytes > 225_280) {
+        throw typedError("AUTOMATION_PROJECT_SIZE_LIMIT_EXCEEDED", `Generated package is ${packageBytes} bytes; maximum is 225280`, 422);
+      }
+      return {
+        ...item,
+        content: {
+          ...content,
+          filename: suitePath,
+          suite_path: suitePath,
+          project_mode: projectMode,
+          operation,
+          automation_project_profile_reference: profileItem.resource_id,
+          resource_files: outputFiles,
+        },
+      };
+    }),
+  };
+}
+
+function validateProjectPath(value, allowedExtensions = new Set([".robot", ".resource", ".py", ".json", ".yaml", ".yml", ".txt", ".csv", ".xml"])) {
+  const normalized = String(value || "");
+  if (!normalized || normalized.length > 512 || normalized.includes("\\") || normalized.startsWith("/") || normalized.startsWith("~")) {
+    throw typedError("AUTOMATION_PROJECT_PATH_INVALID", `Unsafe automation project path: ${normalized || "<empty>"}`, 422);
+  }
+  const parts = normalized.split("/");
+  if (parts.some((part) => !part || part === "." || part === ".." || !/^[A-Za-z0-9._@+-]{1,128}$/.test(part))) {
+    throw typedError("AUTOMATION_PROJECT_PATH_INVALID", `Unsafe automation project path: ${normalized}`, 422);
+  }
+  const extension = require("path").posix.extname(normalized).toLowerCase();
+  if (!allowedExtensions.has(extension)) {
+    throw typedError("AUTOMATION_PROJECT_FILE_TYPE_INVALID", `Unsupported automation project file: ${normalized}`, 422);
+  }
+  return normalized;
 }
 
 async function fetchStoredDocument(lifecycle) {
@@ -494,6 +629,8 @@ module.exports = {
   loadUploadedDocumentSource,
   loadApprovedSources,
   assertStageBindings,
+  materializeProjectPackages,
+  validateProjectPath,
   aiEngineUrl,
   storageServiceUrl,
 };

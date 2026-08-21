@@ -41,7 +41,7 @@ SOURCE_TYPE_BY_STAGE = {
     GenerationStage.TEST_CASES: {"TEST_SCENARIO"},
     GenerationStage.TEST_DATA: {"TEST_CASE"},
     GenerationStage.LOGICAL_STEPS: {"TEST_CASE", "TEST_DATA"},
-    GenerationStage.TEST_SCRIPTS: {"LOGICAL_STEP", "TEST_CASE", "TEST_DATA", "APPLICATION", "DEVICE", "LOCATOR_SET", "TARGET_PROFILE"},
+    GenerationStage.TEST_SCRIPTS: {"LOGICAL_STEP", "TEST_CASE", "TEST_DATA", "APPLICATION", "DEVICE", "LOCATOR_SET", "TARGET_PROFILE", "AUTOMATION_PROJECT_PROFILE"},
 }
 
 
@@ -320,12 +320,20 @@ def _validate_logical_steps(content: Mapping[str, Any], errors: list[str]) -> No
 
 def _validate_script(content: Mapping[str, Any], platform: str | None, errors: list[str]) -> None:
     script = str(content.get("script") or content.get("content") or "")
-    filename = str(content.get("filename") or "")
+    filename = str(content.get("suite_path") or content.get("filename") or "")
     script_platform = str(content.get("platform") or platform or "").upper()
+    project_mode = str(content.get("project_mode") or "").upper()
+    operation = str(content.get("operation") or "").upper()
     if script_platform not in ALLOWED_PLATFORMS:
         errors.append("script platform is invalid")
-    if not re.fullmatch(r"[A-Za-z0-9._-]{1,255}\.robot", filename, re.I):
-        errors.append("filename must be a safe .robot filename")
+    if project_mode not in {"NEW", "EXISTING"}:
+        errors.append("project_mode must be NEW or EXISTING")
+    if operation not in {"CREATE", "UPDATE"}:
+        errors.append("operation must be CREATE or UPDATE")
+    if project_mode == "NEW" and operation != "CREATE":
+        errors.append("NEW projects may only CREATE the root suite")
+    if not _safe_project_path(filename, {".robot"}):
+        errors.append("suite_path must be a safe relative .robot path")
     if len(script) < 20 or len(script.encode("utf-8")) > 225_280:
         errors.append("Robot script size is invalid")
         return
@@ -348,6 +356,64 @@ def _validate_script(content: Mapping[str, Any], platform: str | None, errors: l
         r"(?:^|[\s\"'])[A-Za-z]:\\", script
     ):
         errors.append("Robot script contains an unresolved host-specific path")
+
+    resource_files = content.get("resource_files") or []
+    if not isinstance(resource_files, list):
+        errors.append("resource_files must be an array")
+        resource_files = []
+    if len(resource_files) > 127:
+        errors.append("resource_files contains more than 127 files")
+    seen_paths = {filename.lower()} if filename else set()
+    generated_package_bytes = len(script.encode("utf-8"))
+    for index, file_value in enumerate(resource_files, start=1):
+        if not isinstance(file_value, Mapping):
+            errors.append(f"resource file {index} must be an object")
+            continue
+        file_path = str(file_value.get("path") or "")
+        file_operation = str(file_value.get("operation") or "CREATE").upper()
+        file_content = file_value.get("content")
+        if not _safe_project_path(file_path):
+            errors.append(f"resource file {index} path is unsafe")
+        elif file_path.lower() in seen_paths:
+            errors.append(f"duplicate package path: {file_path}")
+        else:
+            seen_paths.add(file_path.lower())
+        if file_operation not in {"CREATE", "UPDATE"}:
+            errors.append(f"resource file {index} operation must be CREATE or UPDATE")
+        if not isinstance(file_content, str) or not file_content.strip():
+            errors.append(f"resource file {index} content is required")
+        elif len(file_content.encode("utf-8")) > 225_280:
+            errors.append(f"resource file {index} exceeds the package size limit")
+        else:
+            generated_package_bytes += len(file_content.encode("utf-8"))
+
+    reused_paths = content.get("reused_file_paths") or []
+    if not isinstance(reused_paths, list):
+        errors.append("reused_file_paths must be an array")
+        reused_paths = []
+    if project_mode == "NEW" and reused_paths:
+        errors.append("NEW projects cannot reuse existing files")
+    for index, file_path in enumerate(reused_paths, start=1):
+        normalized = str(file_path or "")
+        if not _safe_project_path(normalized):
+            errors.append(f"reused file {index} path is unsafe")
+        elif normalized.lower() in seen_paths:
+            errors.append(f"duplicate package path: {normalized}")
+        else:
+            seen_paths.add(normalized.lower())
+    if generated_package_bytes > 225_280:
+        errors.append("generated package content exceeds 225280 bytes")
+
+
+def _safe_project_path(value: str, extensions: set[str] | None = None) -> bool:
+    if not value or len(value) > 512 or "\\" in value or value.startswith(("/", "~")):
+        return False
+    parts = value.split("/")
+    if any(not part or part in {".", ".."} or not re.fullmatch(r"[A-Za-z0-9._@+-]{1,128}", part) for part in parts):
+        return False
+    suffix = "." + parts[-1].rsplit(".", 1)[-1].lower() if "." in parts[-1] else ""
+    allowed = extensions or {".robot", ".resource", ".py", ".json", ".yaml", ".yml", ".txt", ".csv", ".xml"}
+    return suffix in allowed
 
 
 def _contains_robot_keyword(script: str, candidates: Sequence[str]) -> bool:

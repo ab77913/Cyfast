@@ -116,6 +116,64 @@ class SchemaTests(unittest.TestCase):
                         platform="WINDOWS",
                     )
 
+    def test_project_aware_multifile_script_is_validated(self) -> None:
+        source = {
+            "item_type": "LOGICAL_STEP",
+            "resource_id": "LS-1",
+            "content": {"steps": [{"action": "Save", "assertion": "Record visible"}]},
+        }
+        value = {
+            "items": [{
+                "item_type": "TEST_SCRIPT",
+                "title": "Inventory project suite",
+                "source_resource_ids": ["LS-1"],
+                "source_anchor": {"logical_step": "LS-1"},
+                "content": {
+                    "platform": "WINDOWS",
+                    "project_mode": "EXISTING",
+                    "operation": "UPDATE",
+                    "filename": "tests/inventory.robot",
+                    "suite_path": "tests/inventory.robot",
+                    "script": "*** Test Cases ***\nInventory\n    Click Button    save\n    Element Should Be Visible    success\n",
+                    "resource_files": [{
+                        "path": "resources/inventory.resource",
+                        "operation": "CREATE",
+                        "content": "*** Keywords ***\nSave\n    Click Button    save\n",
+                    }],
+                    "reused_file_paths": ["resources/common.resource"],
+                },
+            }],
+        }
+        items = validate_generation_output(
+            GenerationStage.TEST_SCRIPTS,
+            value,
+            source_items=[source],
+            platform="WINDOWS",
+        )
+        self.assertEqual(items[0].content["suite_path"], "tests/inventory.robot")
+        self.assertEqual(items[0].content["project_mode"], "EXISTING")
+
+    def test_new_project_cannot_update_or_reuse_files(self) -> None:
+        source = {"item_type": "LOGICAL_STEP", "resource_id": "LS-1", "content": {"steps": []}}
+        value = {
+            "items": [{
+                "item_type": "TEST_SCRIPT",
+                "title": "Unsafe new project",
+                "source_resource_ids": ["LS-1"],
+                "source_anchor": {"logical_step": "LS-1"},
+                "content": {
+                    "platform": "WINDOWS",
+                    "project_mode": "NEW",
+                    "operation": "UPDATE",
+                    "suite_path": "tests/a.robot",
+                    "script": "*** Test Cases ***\nA\n    Click Button    save\n    Element Should Be Visible    success\n",
+                    "reused_file_paths": ["resources/common.resource"],
+                },
+            }],
+        }
+        with self.assertRaises(GenerationValidationError):
+            validate_generation_output(GenerationStage.TEST_SCRIPTS, value, source_items=[source], platform="WINDOWS")
+
 
 class ServiceTests(unittest.TestCase):
     def test_local_model_response_is_validated(self) -> None:

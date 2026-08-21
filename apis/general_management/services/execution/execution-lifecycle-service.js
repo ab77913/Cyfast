@@ -177,6 +177,15 @@ function createExecutionLifecycle(dependencies = {}) {
         payload: { external_execution_id: externalExecutionId, target_status: dispatch.status || "ACCEPTED" },
       });
 
+      if (dispatch.completion && typeof dispatch.completion.then === "function") {
+        dispatch.completion
+          .then((result) => finalizeRun(
+            run.execution_run_id,
+            result,
+            internalActor(actor, targetValue.execution_target_id),
+          ))
+          .catch((error) => failRunFromError(run, actor, error));
+      }
       if (dispatch.result) return finalizeRun(run.execution_run_id, dispatch.result, internalActor(actor, targetValue.execution_target_id));
       return run;
     } catch (error) {

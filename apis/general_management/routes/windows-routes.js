@@ -15,7 +15,12 @@ module.exports = async function windowsRoutes(fastify) {
   fastify.post("/windows_nodes/:id/revoke", c.revokeNode);
   fastify.post("/windows_nodes/:id/sessions", c.createSession);
   fastify.get("/windows_sessions/:id", c.getSession);
-  ["launch", "attach", "inspect", "actions", "screenshots", "end"].forEach((action) => fastify.post(`/windows_sessions/:id/${action}`, (r, p) => {
+  [
+    "launch", "attach", "inspect", "actions", "screenshots", "end",
+    "check_runtime", "recover_runtime", "validate_robot_package",
+    "start_robot_job", "get_robot_job_status", "cancel_robot_job",
+    "collect_robot_job_result",
+  ].forEach((action) => fastify.post(`/windows_sessions/:id/${action}`, (r, p) => {
     const request = Object.create(r);
     const commandAction = { actions: "action", screenshots: "screenshot" }[action] || action;
     request.params = { ...r.params, action: commandAction };

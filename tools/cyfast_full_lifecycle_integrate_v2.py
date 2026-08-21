@@ -143,7 +143,7 @@ def patch_quality_service(text: str) -> str:
             '  "LOGICAL_STEP",\n  "APPLICATION",\n  "DEVICE",\n  "LOCATOR_SET",\n  "TARGET_PROFILE",\n  "TEST_SCRIPT",',
             1,
         )
-    binding_guard = '''  if (["APPLICATION", "DEVICE", "LOCATOR_SET", "TARGET_PROFILE"].includes(itemType) &&
+    binding_guard = '''  if (["APPLICATION", "DEVICE", "LOCATOR_SET", "TARGET_PROFILE", "AUTOMATION_PROJECT_PROFILE"].includes(itemType) &&
       ![STATES.COMPLETED, STATES.CANCELLED].includes(status)) return;
 '''
     marker = "function assertItemAllowedForState(status, itemType) {\n"

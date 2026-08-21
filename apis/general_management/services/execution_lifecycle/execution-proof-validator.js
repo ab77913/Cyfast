@@ -140,10 +140,14 @@ function validateExecutionResult(result, options = {}) {
   const realExecution = readBoolean(result, "realExecution", "real_execution");
   const simulated = readBoolean(result, "simulated", "isSimulated", "is_simulated");
   const desktopExecution = readBoolean(result, "desktopExecution", "desktop_execution");
+  const interactiveDesktop = readBoolean(result, "interactiveDesktop", "interactive_desktop");
+  const applicationControlled = readBoolean(result, "applicationControlled", "application_controlled");
   const sessionCreated = readBoolean(result, "sessionCreated", "session_created");
   const exitCode = readNumber(result, "robotExitCode", "robot_exit_code", "exitCode", "exit_code");
   const actions = readNumber(result, "meaningfulActions", "meaningful_actions");
   const assertions = readNumber(result, "meaningfulAssertions", "meaningful_assertions");
+  const actionsExecuted = readBoolean(result, "meaningfulActionsExecuted", "meaningful_actions_executed");
+  const assertionsExecuted = readBoolean(result, "meaningfulAssertionsExecuted", "meaningful_assertions_executed");
 
   if (realExecution !== true) {
     throw new ExecutionProofError("REAL_EXECUTION_REQUIRED", "Result is not marked as real execution.");
@@ -156,6 +160,20 @@ function validateExecutionResult(result, options = {}) {
       throw new ExecutionProofError(
         "DESKTOP_EXECUTION_REQUIRED",
         `${platform} must prove desktop execution.`,
+      );
+    }
+  }
+  if (platform === "WINDOWS" || platform === "WINDOWS_DESKTOP") {
+    if (interactiveDesktop !== true) {
+      throw new ExecutionProofError(
+        "INTERACTIVE_DESKTOP_REQUIRED",
+        `${platform} must prove execution in an interactive desktop session.`,
+      );
+    }
+    if (applicationControlled !== true) {
+      throw new ExecutionProofError(
+        "APPLICATION_CONTROL_REQUIRED",
+        `${platform} must prove that the target application was controlled.`,
       );
     }
   }
@@ -178,10 +196,22 @@ function validateExecutionResult(result, options = {}) {
       "At least one passed meaningful action is required.",
     );
   }
+  if (actionsExecuted !== true) {
+    throw new ExecutionProofError(
+      "MEANINGFUL_ACTION_PROOF_REQUIRED",
+      "Meaningful actions must be explicitly marked as executed.",
+    );
+  }
   if (!Number.isFinite(assertions) || assertions < 1) {
     throw new ExecutionProofError(
       "MEANINGFUL_ASSERTION_REQUIRED",
       "At least one passed meaningful assertion is required.",
+    );
+  }
+  if (assertionsExecuted !== true) {
+    throw new ExecutionProofError(
+      "MEANINGFUL_ASSERTION_PROOF_REQUIRED",
+      "Meaningful assertions must be explicitly marked as executed.",
     );
   }
 
@@ -209,6 +239,8 @@ function validateExecutionResult(result, options = {}) {
     realExecution,
     simulated,
     desktopExecution,
+    interactiveDesktop,
+    applicationControlled,
     sessionCreated,
     exitCode,
     meaningfulActions: actions,

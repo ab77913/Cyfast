@@ -155,11 +155,22 @@ function validateRealPass(result, options = {}) {
   if (result?.real_execution !== true) errors.push("real_execution must be true");
   if (result?.simulated !== false) errors.push("simulated must be false");
   if (result?.target_connected !== true) errors.push("A real target connection is required");
+  if (platform === PLATFORMS.WINDOWS && result?.desktop_execution !== true) {
+    errors.push("Windows execution must prove desktop_execution");
+  }
+  if (platform === PLATFORMS.WINDOWS && result?.interactive_desktop !== true) {
+    errors.push("Windows execution must prove an interactive desktop");
+  }
+  if (platform === PLATFORMS.WINDOWS && result?.application_controlled !== true) {
+    errors.push("Windows execution must prove application control");
+  }
   if ([PLATFORMS.WINDOWS, PLATFORMS.ANDROID].includes(platform) && result?.session_created !== true) {
     errors.push("A real automation session is required");
   }
   if (Number(result?.exit_code) !== 0) errors.push("Execution exit_code must be 0");
+  if (result?.meaningful_actions_executed !== true) errors.push("Meaningful actions must be explicitly proven");
   if (Number(result?.meaningful_actions || 0) < 1) errors.push("At least one passed meaningful action is required");
+  if (result?.meaningful_assertions_executed !== true) errors.push("Meaningful assertions must be explicitly proven");
   if (Number(result?.meaningful_assertions || 0) < 1) errors.push("At least one passed meaningful assertion is required");
   if (result?.status && String(result.status).toUpperCase() !== "PASSED") errors.push("Runner status must be PASSED");
 
@@ -176,9 +187,14 @@ function validateRealPass(result, options = {}) {
       real_execution: result?.real_execution,
       simulated: result?.simulated,
       target_connected: result?.target_connected,
+      desktop_execution: result?.desktop_execution,
+      interactive_desktop: result?.interactive_desktop,
+      application_controlled: result?.application_controlled,
       session_created: result?.session_created,
       exit_code: result?.exit_code,
+      meaningful_actions_executed: result?.meaningful_actions_executed,
       meaningful_actions: result?.meaningful_actions,
+      meaningful_assertions_executed: result?.meaningful_assertions_executed,
       meaningful_assertions: result?.meaningful_assertions,
       evidence: [...evidenceTypes].sort(),
     })),

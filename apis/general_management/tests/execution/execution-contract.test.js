@@ -66,9 +66,14 @@ test("truthful PASS requires real execution, actions, assertions, and evidence",
     real_execution: true,
     simulated: false,
     target_connected: true,
+    desktop_execution: true,
+    interactive_desktop: true,
+    application_controlled: true,
     session_created: true,
     exit_code: 0,
+    meaningful_actions_executed: true,
     meaningful_actions: 3,
+    meaningful_assertions_executed: true,
     meaningful_assertions: 2,
     evidence: [
       { type: "execution_log" },
@@ -94,6 +99,33 @@ test("truthful PASS requires real execution, actions, assertions, and evidence",
   });
   assert.equal(fake.pass, false);
   assert.ok(fake.errors.length >= 7);
+});
+
+test("Windows PASS rejects missing interactive desktop or application control proof", () => {
+  const base = {
+    platform: "WINDOWS",
+    status: "PASSED",
+    real_execution: true,
+    simulated: false,
+    target_connected: true,
+    desktop_execution: true,
+    interactive_desktop: true,
+    application_controlled: true,
+    session_created: true,
+    exit_code: 0,
+    meaningful_actions_executed: true,
+    meaningful_actions: 1,
+    meaningful_assertions_executed: true,
+    meaningful_assertions: 1,
+    evidence: ["execution_log", "output_xml", "screenshot", "runtime_proof"],
+  };
+  const nonInteractive = validateRealPass({ ...base, interactive_desktop: false });
+  assert.equal(nonInteractive.pass, false);
+  assert.match(nonInteractive.errors.join(" | "), /interactive desktop/);
+
+  const uncontrolled = validateRealPass({ ...base, application_controlled: false });
+  assert.equal(uncontrolled.pass, false);
+  assert.match(uncontrolled.errors.join(" | "), /application control/);
 });
 
 test("assertion failures are classified before locator text", () => {

@@ -7,6 +7,7 @@ const {
   EXECUTION_STATUS,
   InvalidExecutionTransitionError,
   assertTransition,
+  validateExecutionResult,
   ExecutionLifecycleOrchestrator,
 } = require("../services/execution_lifecycle");
 
@@ -121,6 +122,32 @@ function command(overrides = {}) {
   };
 }
 
+test("central Windows proof rejects non-interactive or uncontrolled execution", () => {
+  const base = {
+    platform: "WINDOWS",
+    realExecution: true,
+    simulated: false,
+    desktopExecution: true,
+    interactiveDesktop: true,
+    applicationControlled: true,
+    sessionCreated: true,
+    robotExitCode: 0,
+    meaningfulActionsExecuted: true,
+    meaningfulActions: 1,
+    meaningfulAssertionsExecuted: true,
+    meaningfulAssertions: 1,
+    artifacts: [],
+  };
+  assert.throws(
+    () => validateExecutionResult({ ...base, interactiveDesktop: false }),
+    (error) => error.code === "INTERACTIVE_DESKTOP_REQUIRED",
+  );
+  assert.throws(
+    () => validateExecutionResult({ ...base, applicationControlled: false }),
+    (error) => error.code === "APPLICATION_CONTROL_REQUIRED",
+  );
+});
+
 function createHarness({ execute, checkRuntime, repairEngine, defectService } = {}) {
   const repository = new InMemoryRepository();
   const clock = createClock();
@@ -145,9 +172,13 @@ function createHarness({ execute, checkRuntime, repairEngine, defectService } = 
         realExecution: true,
         simulated: false,
         desktopExecution: true,
+        interactiveDesktop: true,
+        applicationControlled: true,
         sessionCreated: true,
         robotExitCode: 0,
+        meaningfulActionsExecuted: true,
         meaningfulActions: 2,
+        meaningfulAssertionsExecuted: true,
         meaningfulAssertions: 1,
         artifacts: [artifact()],
       };
@@ -221,9 +252,13 @@ test("simulated success is rejected and can never become PASS", async () => {
         realExecution: true,
         simulated: true,
         desktopExecution: true,
+        interactiveDesktop: true,
+        applicationControlled: true,
         sessionCreated: true,
         robotExitCode: 0,
+        meaningfulActionsExecuted: true,
         meaningfulActions: 3,
+        meaningfulAssertionsExecuted: true,
         meaningfulAssertions: 2,
         artifacts: [artifact()],
       };
@@ -283,9 +318,13 @@ test("locator failure receives one bounded safe repair and creates a new rerun a
           realExecution: true,
           simulated: false,
           desktopExecution: true,
+          interactiveDesktop: true,
+          applicationControlled: true,
           sessionCreated: true,
           robotExitCode: 1,
+          meaningfulActionsExecuted: true,
           meaningfulActions: 1,
+          meaningfulAssertionsExecuted: false,
           meaningfulAssertions: 0,
           failureClassification: "LOCATOR_FAILURE",
           failureMessage: "Element locator did not match.",
@@ -297,9 +336,13 @@ test("locator failure receives one bounded safe repair and creates a new rerun a
         realExecution: true,
         simulated: false,
         desktopExecution: true,
+        interactiveDesktop: true,
+        applicationControlled: true,
         sessionCreated: true,
         robotExitCode: 0,
+        meaningfulActionsExecuted: true,
         meaningfulActions: 2,
+        meaningfulAssertionsExecuted: true,
         meaningfulAssertions: 1,
         artifacts: [artifact()],
       };
@@ -338,9 +381,13 @@ test("product or assertion failure creates a defect and is never auto-repaired",
         realExecution: true,
         simulated: false,
         desktopExecution: true,
+        interactiveDesktop: true,
+        applicationControlled: true,
         sessionCreated: true,
         robotExitCode: 1,
+        meaningfulActionsExecuted: true,
         meaningfulActions: 2,
+        meaningfulAssertionsExecuted: false,
         meaningfulAssertions: 0,
         failureClassification: "PRODUCT_DEFECT",
         failureMessage: "The application returned an incorrect business result.",

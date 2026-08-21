@@ -263,6 +263,9 @@ class ExecutionResult:
     finished_at: str
     duration_ms: int
     artifacts: tuple[Artifact, ...]
+    desktop_execution: bool = False
+    interactive_desktop: bool = False
+    application_controlled: bool = False
     runner_version: str | None = None
     application_version: str | None = None
     device_version: str | None = None
@@ -276,6 +279,9 @@ class ExecutionResult:
         value = dataclasses.asdict(self)
         value["platform"] = self.platform.value
         value["artifacts"] = [artifact.to_dict() for artifact in self.artifacts]
+        value["robot_exit_code"] = self.exit_code
+        value["meaningful_actions_executed"] = self.meaningful_actions > 0
+        value["meaningful_assertions_executed"] = self.meaningful_assertions > 0
         return _drop_none(value)
 
 

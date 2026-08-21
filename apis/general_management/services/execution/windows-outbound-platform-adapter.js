@@ -172,6 +172,10 @@ function toRobotPackage(request) {
 }
 
 function normalizeRobotResult(result) {
+  const desktopExecution = result.desktopExecution === true || result.DesktopExecution === true;
+  const applicationControlled = result.applicationControlled === true || result.ApplicationControlled === true;
+  const meaningfulActions = result.meaningfulActions ?? result.MeaningfulActions ?? 0;
+  const meaningfulAssertions = result.meaningfulAssertions ?? result.MeaningfulAssertions ?? 0;
   const artifacts = (result.artifacts || result.Artifacts || []).map((artifact) => ({
     type: mapArtifactType(artifact.type || artifact.Type),
     filename: artifact.fileName || artifact.FileName,
@@ -198,12 +202,19 @@ function normalizeRobotResult(result) {
     status: result.status || result.Status,
     real_execution: result.realExecution === true || result.RealExecution === true,
     simulated: result.simulated === true || result.Simulated === true,
-    desktop_execution: result.desktopExecution === true || result.DesktopExecution === true,
+    desktop_execution: desktopExecution,
+    interactive_desktop: result.interactiveDesktop === true || result.InteractiveDesktop === true,
+    application_controlled: applicationControlled,
     target_connected: true,
     session_created: result.sessionCreated === true || result.SessionCreated === true,
     exit_code: result.robotExitCode ?? result.RobotExitCode,
-    meaningful_actions: result.meaningfulActions ?? result.MeaningfulActions ?? 0,
-    meaningful_assertions: result.meaningfulAssertions ?? result.MeaningfulAssertions ?? 0,
+    robot_exit_code: result.robotExitCode ?? result.RobotExitCode,
+    meaningful_actions_executed:
+      result.meaningfulActionsExecuted === true || result.MeaningfulActionsExecuted === true,
+    meaningful_actions: meaningfulActions,
+    meaningful_assertions_executed:
+      result.meaningfulAssertionsExecuted === true || result.MeaningfulAssertionsExecuted === true,
+    meaningful_assertions: meaningfulAssertions,
     failure_classification: result.failureClassification || result.FailureClassification,
     failure_message: result.failureMessage || result.FailureMessage,
     stdout: result.stdout || result.Stdout,

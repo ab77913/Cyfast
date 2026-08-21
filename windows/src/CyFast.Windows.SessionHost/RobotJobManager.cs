@@ -360,6 +360,8 @@ public sealed class RobotJobManager : IDisposable
             RealExecution: proof.RealExecution,
             Simulated: proof.Simulated,
             DesktopExecution: proof.DesktopExecution,
+            InteractiveDesktop: proof.DesktopExecution,
+            ApplicationControlled: proof.Application is { ProcessRunning: true, WindowFound: true },
             RuntimeOs: proof.RuntimeOs,
             Host: Environment.MachineName,
             AppiumUrl: proof.DriverSession.AppiumUrl,
@@ -368,7 +370,9 @@ public sealed class RobotJobManager : IDisposable
             RuntimeProofVerifiedAt: proof.DriverSession.LastVerifiedAt,
             SessionCreated: proof.DriverSession.SessionCreated,
             RobotExitCode: exitCode,
+            MeaningfulActionsExecuted: actions > 0,
             MeaningfulActions: actions,
+            MeaningfulAssertionsExecuted: assertions > 0,
             MeaningfulAssertions: assertions,
             StartedAt: started,
             FinishedAt: finished,
@@ -390,7 +394,9 @@ public sealed class RobotJobManager : IDisposable
             RuntimeOs: "Windows",
             DriverSession.Ready: true,
             DriverSession.SessionCreated: true,
-            Application.PathExists: true
+            Application.PathExists: true,
+            Application.ProcessRunning: true,
+            Application.WindowFound: true
         } &&
         status.DriverSession.LastVerifiedAt is { } verifiedAt &&
         DateTimeOffset.UtcNow - verifiedAt <= RuntimeProofMaximumAge;

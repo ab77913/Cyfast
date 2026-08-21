@@ -8,7 +8,7 @@ import tempfile
 import threading
 import unittest
 
-from test_agent.platform_runtime.contracts import ExecutionPackage, ExecutionRequest, JobSnapshot, JobState, Platform, RuntimeHealth, utc_now
+from test_agent.platform_runtime.contracts import ExecutionPackage, ExecutionRequest, ExecutionResult, JobSnapshot, JobState, Platform, RuntimeHealth, utc_now
 from test_agent.platform_runtime.package import PackageValidationError, validate_package
 from test_agent.platform_runtime.server import build_server
 
@@ -72,6 +72,32 @@ class PackageTests(unittest.TestCase):
             )
             with self.assertRaises(PackageValidationError):
                 validate_package(package)
+
+    def test_execution_result_emits_explicit_meaningful_proof_flags(self) -> None:
+        timestamp = utc_now()
+        result = ExecutionResult(
+            execution_id="run-1",
+            correlation_id="corr-1",
+            platform=Platform.WINDOWS,
+            status="PASSED",
+            real_execution=True,
+            simulated=False,
+            target_connected=True,
+            session_created=True,
+            exit_code=0,
+            meaningful_actions=2,
+            meaningful_assertions=1,
+            started_at=timestamp,
+            finished_at=timestamp,
+            duration_ms=1,
+            artifacts=(),
+            desktop_execution=True,
+            interactive_desktop=True,
+            application_controlled=True,
+        ).to_dict()
+        self.assertTrue(result["meaningful_actions_executed"])
+        self.assertTrue(result["meaningful_assertions_executed"])
+        self.assertEqual(result["robot_exit_code"], 0)
 
 
 class FakeExecutor:

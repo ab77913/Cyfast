@@ -236,9 +236,17 @@ function createExecutionLifecycle(dependencies = {}) {
       real_execution: result.real_execution === true,
       simulated: result.simulated === true,
       target_connected: result.target_connected === true,
+      desktop_execution: result.desktop_execution === true,
+      interactive_desktop: result.interactive_desktop === true,
+      application_controlled: result.application_controlled === true,
       session_created: result.session_created === true,
       exit_code: Number.isFinite(Number(result.exit_code)) ? Number(result.exit_code) : null,
+      robot_exit_code: Number.isFinite(Number(result.robot_exit_code ?? result.exit_code))
+        ? Number(result.robot_exit_code ?? result.exit_code)
+        : null,
+      meaningful_actions_executed: result.meaningful_actions_executed === true,
       meaningful_actions: Math.max(Number(result.meaningful_actions || 0), 0),
+      meaningful_assertions_executed: result.meaningful_assertions_executed === true,
       meaningful_assertions: Math.max(Number(result.meaningful_assertions || 0), 0),
       evidence: evidence.persisted.map((item) => ({ type: item.artifact_type, sha256: item.content_hash })),
       evidence_complete: evidence.complete,

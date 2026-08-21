@@ -145,9 +145,13 @@ test("outbound Windows package and proof normalization preserve deterministic ev
     RealExecution: true,
     Simulated: false,
     DesktopExecution: true,
+    InteractiveDesktop: true,
+    ApplicationControlled: true,
     SessionCreated: true,
     RobotExitCode: 0,
+    MeaningfulActionsExecuted: true,
     MeaningfulActions: 1,
+    MeaningfulAssertionsExecuted: true,
     MeaningfulAssertions: 1,
     RuntimeProofSessionId: "session-1",
     Artifacts: [{
@@ -160,6 +164,10 @@ test("outbound Windows package and proof normalization preserve deterministic ev
     }],
   });
   assert.equal(result.real_execution, true);
+  assert.equal(result.interactive_desktop, true);
+  assert.equal(result.application_controlled, true);
+  assert.equal(result.meaningful_actions_executed, true);
+  assert.equal(result.meaningful_assertions_executed, true);
   assert.equal(result.artifacts[0].type, "output_xml");
   assert.ok(result.artifacts.some((artifact) => artifact.type === "runtime_proof"));
 });
